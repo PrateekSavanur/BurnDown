@@ -1,0 +1,21 @@
+# LAN + Tailscale only: resolved by the AdGuard *.home wildcard → Traefik. Not exposed via cloudflared.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: burndown
+  namespace: burndown
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: burndown.home.prateeksavanur.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: burndown
+                port:
+                  number: 80

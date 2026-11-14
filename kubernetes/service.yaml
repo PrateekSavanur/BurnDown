@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: burndown
+  namespace: burndown
+spec:
+  selector:
+    app: burndown
+  ports:
+    - port: 80
+      targetPort: 8088

@@ -1,0 +1,11 @@
+services:
+  burndown:
+    build: .
+    container_name: burndown
+    restart: unless-stopped
+    env_file: .env
+    user: "${UID:-1000}:${GID:-1000}"   # so ./data stays owned by you
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./data:/data

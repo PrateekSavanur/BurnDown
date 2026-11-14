@@ -1,0 +1,70 @@
+# Secrets (BOARD_PASSWORD, TELEGRAM_BOT_TOKEN, optional TELEGRAM_CHAT_ID) come from the
+# burndown-secrets Secret, created out-of-band with kubectl, not tracked in git.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: burndown
+  namespace: burndown
+  labels:
+    app: burndown
+spec:
+  replicas: 1             # SQLite on a RWO volume + one Telegram poller: must stay at 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: burndown
+  template:
+    metadata:
+      labels:
+        app: burndown
+    spec:
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: burndown
+          image: prateeksavanur/burndown:latest
+          ports:
+            - containerPort: 8088
+          env:
+            - name: PORT
+              value: "8088"
+            - name: DB_PATH
+              value: /data/burndown.db
+            - name: TIMEZONE
+              value: Asia/Kolkata
+            - name: ALERT_TIMES
+              value: "09:00,21:00"
+            - name: BOARD_URL
+              value: https://burndown.home.prateeksavanur.dev
+          envFrom:
+            - secretRef:
+                name: burndown-secrets
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "48Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8088
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8088
+            initialDelaySeconds: 3
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: burndown-data

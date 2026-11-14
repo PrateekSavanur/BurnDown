@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>burndown</title>
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230b0d12'/><path d='M6 8 L14 14 L19 12 L26 24' stroke='%238b6cff' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f6fa; --bg-glow:rgba(109,74,255,.10); --panel:#ffffff; --panel-2:#f8f9fc; --raise:#ffffff;
+  --line:#e2e5ee; --line-2:#d3d8e4; --text:#141722; --muted:#5d6477; --faint:#9aa1b3;
+  --accent:#6d4aff; --accent-2:#0aa6c9; --accent-soft:rgba(109,74,255,.12);
+  --danger:#e0414a; --danger-soft:rgba(224,65,74,.10); --warn:#c27c00; --warn-soft:rgba(194,124,0,.12);
+  --ok:#159a5d; --ok-soft:rgba(21,154,93,.12); --info:#2f6fe4;
+  --shadow:0 1px 2px rgba(15,20,35,.05),0 6px 20px rgba(15,20,35,.06);
+  --shadow-lg:0 20px 60px rgba(15,20,35,.18);
+  --radius:14px;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --display:"Space Grotesk","Inter",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#08090d; --bg-glow:rgba(139,108,255,.16); --panel:#10131b; --panel-2:#141823; --raise:#181d2a;
+    --line:#1f2533; --line-2:#2a3244; --text:#e7eaf2; --muted:#98a0b5; --faint:#5c6479;
+    --accent:#8b6cff; --accent-2:#22d3ee; --accent-soft:rgba(139,108,255,.16);
+    --danger:#ff5a64; --danger-soft:rgba(255,90,100,.12); --warn:#f3b33d; --warn-soft:rgba(243,179,61,.12);
+    --ok:#3ddc97; --ok-soft:rgba(61,220,151,.12); --info:#5b9cff;
+    --shadow:0 1px 0 rgba(255,255,255,.02) inset,0 8px 24px rgba(0,0,0,.35);
+    --shadow-lg:0 30px 80px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08090d; --bg-glow:rgba(139,108,255,.16); --panel:#10131b; --panel-2:#141823; --raise:#181d2a;
+  --line:#1f2533; --line-2:#2a3244; --text:#e7eaf2; --muted:#98a0b5; --faint:#5c6479;
+  --accent:#8b6cff; --accent-2:#22d3ee; --accent-soft:rgba(139,108,255,.16);
+  --danger:#ff5a64; --danger-soft:rgba(255,90,100,.12); --warn:#f3b33d; --warn-soft:rgba(243,179,61,.12);
+  --ok:#3ddc97; --ok-soft:rgba(61,220,151,.12); --info:#5b9cff;
+  --shadow:0 1px 0 rgba(255,255,255,.02) inset,0 8px 24px rgba(0,0,0,.35);
+  --shadow-lg:0 30px 80px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(1200px 500px at 15% -10%,var(--bg-glow),transparent 60%),
+                   radial-gradient(900px 400px at 100% -20%,rgba(34,211,238,.07),transparent 60%);
+  background-attachment:fixed;
+  color:var(--text); font:14px/1.5 var(--font); min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1640px;margin:0 auto;padding:18px 20px 60px}
+@media (max-width:640px){.app{padding:12px 16px 60px}}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{font:700 22px/1 var(--display);letter-spacing:-.03em;display:flex;align-items:center;gap:10px;margin-right:6px}
+.brand svg{flex:none}
+.brand b{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px;overflow-x:auto;max-width:100%}
+.tabs button{border:0;background:none;padding:6px 14px;border-radius:999px;color:var(--muted);font-weight:500;white-space:nowrap}
+.tabs button.on{background:var(--accent-soft);color:var(--text)}
+.tabs .badge{display:inline-block;min-width:18px;padding:0 5px;margin-left:6px;border-radius:9px;background:var(--danger);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
+.spacer{flex:1}
+.search{position:relative}
+.search input{width:220px;max-width:46vw;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px 8px 32px}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.kbd{font:600 11px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px;border-radius:5px;padding:1px 5px;color:var(--muted);background:var(--panel-2)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:border-color .15s,background .15s,transform .05s}
+.btn:hover{border-color:var(--line-2);background:var(--panel-2)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 70%,var(--accent-2)));border-color:transparent;color:#fff;box-shadow:0 6px 20px color-mix(in srgb,var(--accent) 35%,transparent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--line))}
+.btn.danger:hover{background:var(--danger-soft)}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--panel-2);color:var(--text)}
+.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+.icon-btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;width:36px;height:36px;display:grid;place-items:center;color:var(--muted)}
+.icon-btn:hover{color:var(--text);border-color:var(--line-2)}
+
+/* ---------- sprint header ---------- */
+.sprint{display:grid;grid-template-columns:minmax(0,1.4fr) auto minmax(220px,1fr) auto;gap:22px;align-items:center;
+  background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:18px;padding:18px 22px;box-shadow:var(--shadow);margin-bottom:14px}
+@media (max-width:1100px){.sprint{grid-template-columns:1fr auto}.sprint .burn{grid-column:1/-1;order:3}.sprint .s-actions{grid-column:1/-1;order:4}}
+@media (max-width:560px){.sprint{grid-template-columns:1fr;padding:16px}.sprint .ring-wrap{justify-self:start}}
+.s-pick{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.s-pick select{background:none;border:0;color:var(--muted);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:0;cursor:pointer}
+.s-name{font:700 26px/1.15 var(--display);letter-spacing:-.02em;margin:0}
+.s-goal{color:var(--muted);margin-top:4px;max-width:60ch}
+.s-goal:empty::before{content:"No sprint goal. Edit the sprint to add one.";color:var(--faint);font-style:italic}
+.s-dates{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--muted);background:var(--panel)}
+.pill.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:var(--warn-soft)}
+.pill.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,transparent);background:var(--danger-soft)}
+.pill.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:var(--ok-soft)}
+.pill.accent{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent);background:var(--accent-soft)}
+.ring-wrap{display:flex;align-items:center;gap:14px}
+.ring{position:relative;width:76px;height:76px}
+.ring svg{transform:rotate(-90deg)}
+.ring .pct{position:absolute;inset:0;display:grid;place-items:center;font:700 18px var(--display)}
+.ring-stats{display:grid;gap:2px;font-size:13px;color:var(--muted)}
+.ring-stats b{color:var(--text);font:600 15px var(--display)}
+.burn{min-width:0}
+.burn-head{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.burn svg{width:100%;height:78px;display:block;overflow:visible}
+.s-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+/* ---------- alert strip ---------- */
+.strip{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);background:var(--danger-soft);
+  border-radius:14px;padding:10px 14px;margin-bottom:14px}
+.strip.warn{border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:var(--warn-soft)}
+.strip .dot{width:8px;height:8px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 4px color-mix(in srgb,var(--danger) 25%,transparent);animation:pulse 1.6s infinite}
+.strip.warn .dot{background:var(--warn);box-shadow:0 0 0 4px color-mix(in srgb,var(--warn) 25%,transparent)}
+.strip .chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip-btn{border:1px solid var(--line-2);background:var(--panel);border-radius:8px;padding:3px 9px;font-size:12px}
+.chip-btn:hover{border-color:var(--danger)}
+@keyframes pulse{50%{opacity:.4}}
+
+/* ---------- filters ---------- */
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.fchip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 12px 4px 9px;font-size:13px;color:var(--muted)}
+.fchip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.fchip.on{color:var(--text);border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--panel))}
+.filters .count{margin-left:auto;color:var(--faint);font-size:12px}
+
+/* ---------- board ---------- */
+.board{display:grid;grid-template-columns:repeat(4,minmax(260px,1fr));gap:14px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
+@media (max-width:1100px){.board{grid-template-columns:repeat(4,minmax(280px,82vw))}}
+.col{background:color-mix(in srgb,var(--panel) 65%,transparent);border:1px solid var(--line);border-radius:var(--radius);display:flex;flex-direction:column;min-height:420px;scroll-snap-align:start;transition:border-color .15s,background .15s}
+.col.over{border-color:var(--accent);background:var(--accent-soft)}
+.col-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0}
+.col-head .bar{width:10px;height:10px;border-radius:3px;background:var(--sc)}
+.col-head h3{margin:0;font:600 14px var(--display);letter-spacing:.01em}
+.col-head .n{font:600 12px var(--mono);color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:0 6px}
+.col-head .add{margin-left:auto}
+.col-body{padding:10px;display:flex;flex-direction:column;gap:8px;flex:1}
+.empty{color:var(--faint);font-size:13px;text-align:center;padding:26px 10px;border:1px dashed var(--line-2);border-radius:12px}
+.card{position:relative;background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:10px 12px 10px 14px;box-shadow:var(--shadow);cursor:grab;transition:transform .12s,border-color .12s,box-shadow .12s;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--area)}
+.card:hover{transform:translateY(-1px);border-color:var(--line-2)}
+.card.dragging{opacity:.45}
+.card.done .ctitle{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.card.late{border-color:color-mix(in srgb,var(--danger) 55%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--danger) 25%,transparent),0 0 24px color-mix(in srgb,var(--danger) 16%,transparent)}
+.card-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.cid{font:600 11px var(--mono);color:var(--faint)}
+.tag{font-size:11px;font-weight:600;color:var(--area);background:color-mix(in srgb,var(--area) 14%,transparent);border-radius:5px;padding:0 6px}
+.prio{margin-left:auto;font:700 10px var(--mono);letter-spacing:.04em;padding:1px 5px;border-radius:4px}
+.prio.p1{color:var(--danger);background:var(--danger-soft)}
+.prio.p2{color:var(--muted);background:var(--panel-2)}
+.prio.p3{color:var(--faint)}
+.ctitle{font-weight:500;line-height:1.35;word-wrap:break-word}
+.cmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:11.5px}
+.cmeta:empty{display:none}
+.cmeta span{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:6px;background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+.cmeta .due.late{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,transparent);background:var(--danger-soft);font-weight:600}
+.cmeta .due.today{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:var(--warn-soft);font-weight:600}
+.cmeta .due.soon{color:var(--info)}
+.cmeta .spills{color:var(--warn)}
+.cmeta .ev{color:var(--ok)}
+.reason-btn{margin-top:9px;width:100%;border:1px solid color-mix(in srgb,var(--danger) 45%,transparent);background:var(--danger-soft);color:var(--danger);border-radius:8px;padding:5px 8px;font-size:12px;font-weight:600}
+.reason-btn:hover{background:color-mix(in srgb,var(--danger) 20%,transparent)}
+.welcome{grid-column:1/-1;text-align:center;padding:70px 20px;border:1px dashed var(--line-2);border-radius:18px;background:color-mix(in srgb,var(--panel) 60%,transparent)}
+.welcome h2{font:700 28px var(--display);letter-spacing:-.02em;margin:0 0 8px}
+.welcome p{color:var(--muted);max-width:52ch;margin:0 auto 20px}
+
+/* ---------- panels: backlog / ledger / settings ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.panel-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 18px;border-bottom:1px solid var(--line)}
+.panel-head h2{margin:0;font:700 18px var(--display);letter-spacing:-.01em}
+.panel-head .sub{color:var(--muted);font-size:13px}
+.quick{display:flex;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.quick input{flex:1;min-width:200px}
+.field,.quick input,.quick select{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;width:100%}
+.quick select{width:auto}
+.field:focus,.quick input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+textarea.field{resize:vertical;min-height:80px}
+.rows{list-style:none;margin:0;padding:6px}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:9px 12px;border-radius:10px;cursor:pointer}
+.row:hover{background:var(--panel-2)}
+.row .t{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .m{display:flex;gap:6px;align-items:center}
+@media (max-width:640px){.row{grid-template-columns:auto minmax(0,1fr)}.row .m{grid-column:2}}
+.stack{display:grid;gap:14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.tile .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+.tile .v{font:700 28px/1.2 var(--display);margin-top:4px}
+.tile .s{font-size:12px;color:var(--muted)}
+.bars{padding:14px 18px;display:grid;gap:10px}
+.bar-row{display:grid;grid-template-columns:130px 1fr 34px;gap:10px;align-items:center;font-size:13px}
+.bar-row .track{height:8px;border-radius:5px;background:var(--panel-2);overflow:hidden}
+.bar-row .fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--warn),var(--danger))}
+.bar-row .num{font:600 12px var(--mono);color:var(--muted);text-align:right}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:900px){.split{grid-template-columns:1fr}}
+.timeline{list-style:none;margin:0;padding:8px 18px 18px}
+.tday{font:600 11px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em;padding:14px 0 6px}
+.ev-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.ev-ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:13px;background:var(--panel-2);color:var(--muted)}
+.ev-ico.spilled{background:var(--warn-soft);color:var(--warn)}
+.ev-ico.dropped{background:var(--danger-soft);color:var(--danger)}
+.ev-ico.done{background:var(--ok-soft);color:var(--ok)}
+.ev-ico.sprint{background:var(--accent-soft);color:var(--accent)}
+.ev-main{min-width:0}
+.ev-main .what{overflow-wrap:anywhere}
+.ev-main .why{margin-top:4px;padding:6px 10px;border-left:2px solid var(--warn);background:var(--panel-2);border-radius:0 8px 8px 0;color:var(--text);font-size:13px}
+.ev-main .why.drop{border-left-color:var(--danger)}
+.ev-time{font:12px var(--mono);color:var(--faint);white-space:nowrap}
+.seg-mini{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--panel-2)}
+.seg-mini button{border:0;background:none;padding:4px 10px;border-radius:7px;font-size:12px;color:var(--muted)}
+.seg-mini button.on{background:var(--panel);color:var(--text);box-shadow:var(--shadow)}
+.set-body{padding:16px 18px;display:grid;gap:12px}
+.area-row{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center}
+.area-row input[type=color]{width:40px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);padding:3px}
+.status{display:flex;align-items:center;gap:8px}
+.status i{width:9px;height:9px;border-radius:50%;background:var(--faint)}
+.status.on i{background:var(--ok);box-shadow:0 0 0 4px var(--ok-soft)}
+.status.off i{background:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.rules{margin:0;padding-left:18px;color:var(--muted);display:grid;gap:6px}
+.rules b{color:var(--text)}
+code{font:12.5px var(--mono);background:var(--panel-2);border:1px solid var(--line);border-radius:5px;padding:0 5px}
+
+/* ---------- drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(5,6,10,.45);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(500px,100vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:var(--shadow-lg);
+  transform:translateX(105%);transition:transform .25s cubic-bezier(.2,.8,.2,1);z-index:50;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.d-head .cid{font-size:13px}
+.d-body{padding:18px;overflow-y:auto;flex:1;display:grid;gap:14px;align-content:start}
+.d-title{font:600 20px/1.3 var(--display);border:1px solid transparent;background:none;border-radius:10px;padding:6px 8px;margin:-6px -8px;width:calc(100% + 16px)}
+.d-title:hover{border-color:var(--line)}
+.d-title:focus{border-color:var(--accent);outline:none;background:var(--panel-2)}
+.lbl{display:grid;gap:6px;font-size:12px;color:var(--muted);font-weight:500}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.grid2{grid-template-columns:1fr}}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:11px;padding:3px;background:var(--panel-2);gap:3px}
+.seg button{border:0;background:none;border-radius:8px;padding:7px 4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--panel);color:var(--text);box-shadow:var(--shadow);outline:1px solid var(--sc)}
+.d-foot{display:flex;gap:8px;padding:14px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.d-foot .spacer{flex:1}
+.hist{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.hist li{display:grid;grid-template-columns:16px 1fr;gap:10px;padding:6px 0;font-size:13px;position:relative}
+.hist li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--line-2);margin:6px 0 0 4px}
+.hist li.spilled::before{background:var(--warn)}
+.hist li.dropped::before{background:var(--danger)}
+.hist li.done::before{background:var(--ok)}
+.hist .t{color:var(--faint);font:11.5px var(--mono)}
+.hist .why{color:var(--text);margin-top:2px}
+.notice{border-radius:10px;padding:10px 12px;font-size:13px;background:var(--danger-soft);color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 35%,transparent)}
+
+/* ---------- dialogs ---------- */
+dialog{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:18px;padding:0;width:min(560px,calc(100vw - 32px));box-shadow:var(--shadow-lg)}
+dialog.wide{width:min(860px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(5,6,10,.55);backdrop-filter:blur(3px)}
+.dlg{display:grid;gap:14px;padding:20px}
+.dlg h3{margin:0;font:700 19px var(--display);letter-spacing:-.01em}
+.dlg .lead{margin:-6px 0 0;color:var(--muted)}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px}
+.cats{display:flex;flex-wrap:wrap;gap:6px}
+.cats label{cursor:pointer}
+.cats input{position:absolute;opacity:0;pointer-events:none}
+.cats span{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:12.5px;color:var(--muted);background:var(--panel-2)}
+.cats input:checked+span{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.cats input:focus-visible+span{outline:2px solid var(--accent)}
+.opts{display:grid;gap:8px}
+.opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;flex-wrap:wrap}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt input[type=date]{margin-left:auto;width:auto}
+.close-list{display:grid;gap:10px;max-height:52vh;overflow-y:auto}
+.close-row{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px;background:var(--panel-2)}
+.close-row .ctl{display:grid;grid-template-columns:150px 150px 1fr;gap:8px}
+@media (max-width:640px){.close-row .ctl{grid-template-columns:1fr 1fr}.close-row .ctl input{grid-column:1/-1}}
+.close-row select,.close-row input{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 9px;width:100%}
+.summary{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- toast ---------- */
+.toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:grid;gap:8px;z-index:100;width:min(520px,calc(100vw - 32px))}
+.toast{background:var(--raise);border:1px solid var(--line-2);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow-lg);display:flex;gap:10px;align-items:flex-start;animation:tin .2s ease-out}
+.toast.err{border-color:color-mix(in srgb,var(--danger) 50%,var(--line))}
+.toast.err::before{content:"!";flex:none;width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;font:700 12px/18px var(--mono);text-align:center}
+.toast.ok::before{content:"✓";flex:none;width:18px;height:18px;border-radius:50%;background:var(--ok);color:#06110b;font:700 12px/18px var(--mono);text-align:center}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}}
+.hidden{display:none!important}
+.loading{display:grid;place-items:center;min-height:60vh;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--panel)" stroke="var(--line)"/><path d="M6 8 L13 14 L18 12 L26 24" stroke="url(#g)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-2)"/></linearGradient></defs></svg>
+      <span><b>burn</b>down</span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="board">Board</button>
+      <button data-tab="backlog">Backlog</button>
+      <button data-tab="ledger">Ledger</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+    <div class="spacer"></div>
+    <label class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search  /" autocomplete="off"></label>
+    <button class="icon-btn" id="themeBtn" title="Theme"></button>
+    <button class="btn primary" id="newBtn">+ New item <span class="kbd" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff">N</span></button>
+  </header>
+
+  <div id="root"><div class="loading">Loading board…</div></div>
+</div>
+
+<!-- item drawer -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="d-head">
+    <span class="cid" id="dId"></span>
+    <span class="pill" id="dSpills"></span>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="dClose" title="Close (Esc)">✕</button>
+  </div>
+  <form id="itemForm" class="d-body" autocomplete="off">
+    <input class="d-title" name="title" placeholder="What will you deliver?" required maxlength="200">
+    <div id="dNotice"></div>
+    <div class="seg" id="dState">
+      <button type="button" data-state="todo" style="--sc:var(--faint)">To do</button>
+      <button type="button" data-state="doing" style="--sc:var(--info)">In progress</button>
+      <button type="button" data-state="blocked" style="--sc:var(--warn)">Blocked</button>
+      <button type="button" data-state="done" style="--sc:var(--ok)">Done</button>
+    </div>
+    <div class="grid2">
+      <label class="lbl">Area<select class="field" name="area_id"></select></label>
+      <label class="lbl">Sprint<select class="field" name="sprint_id"></select></label>
+      <label class="lbl">Priority<select class="field" name="priority"><option value="1">P1: must happen</option><option value="2">P2: should happen</option><option value="3">P3: nice to have</option></select></label>
+      <label class="lbl">Due date<input class="field" type="date" name="due_date"></label>
+    </div>
+    <label class="lbl">Definition of done<textarea class="field" name="description" placeholder="What does finished look like? Be specific."></textarea></label>
+    <label class="lbl">Evidence<input class="field" name="evidence" placeholder="Commit link, lab score, recording, screenshot…"></label>
+    <div id="dHistWrap"><div class="lbl" style="margin-bottom:6px">History</div><ol class="hist" id="dHist"></ol></div>
+  </form>
+  <div class="d-foot">
+    <button class="btn primary" form="itemForm" type="submit" id="dSave">Save</button>
+    <button class="btn" type="button" id="dSpill">↻ Spill…</button>
+    <div class="spacer"></div>
+    <button class="btn ghost" type="button" id="dDrop">Drop…</button>
+    <button class="btn ghost" type="button" id="dDelete" title="Only for items created by mistake">Delete</button>
+  </div>
+</aside>
+
+<!-- spill dialog -->
+<dialog id="spillDlg">
+  <form class="dlg" id="spillForm">
+    <h3>Spill <span id="spillWhat" class="muted"></span></h3>
+    <p class="lead">It didn't happen as planned. Write down why. This goes into the ledger and stays there.</p>
+    <div class="lbl">What got in the way?<div class="cats" id="spillCats"></div></div>
+    <label class="lbl">The honest reason<textarea class="field" name="reason" required minlength="3" placeholder="e.g. Spent Tuesday firefighting the prod incident; didn't protect the evening slot."></textarea></label>
+    <div class="lbl">What now?
+      <div class="opts">
+        <label class="opt" id="optResched"><input type="radio" name="action" value="reschedule"> New deadline in this sprint <input class="field" type="date" name="new_due"></label>
+        <label class="opt"><input type="radio" name="action" value="next_sprint"> Carry over to next sprint</label>
+        <label class="opt"><input type="radio" name="action" value="backlog"> Back to backlog</label>
+      </div>
+    </div>
+    <div class="dlg-foot"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Log spill</button></div>
+  </form>
+</dialog>
+
+<!-- drop dialog -->
+<dialog id="dropDlg">
+  <form class="dlg" id="dropForm">
+    <h3>Drop <span id="dropWhat" class="muted"></span></h3>
+    <p class="lead">Dropping is allowed. Dropping without a reason isn't. It stays in the ledger.</p>
+    <div class="lbl">Category<div class="cats" id="dropCats"></div></div>
+    <label class="lbl">Why is this no longer worth doing?<textarea class="field" name="reason" required minlength="3"></textarea></label>
+    <div class="dlg-foot"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn danger" type="submit">Drop item</button></div>
+  </form>
+</dialog>
+
+<!-- sprint dialog -->
+<dialog id="sprintDlg">
+  <form class="dlg" id="sprintForm">
+    <h3 id="sprintDlgTitle">New sprint</h3>
+    <p class="lead" id="sprintDlgLead">Two weeks. Planning takes about 45 minutes: review last sprint's spills, then commit.</p>
+    <label class="lbl">Name<input class="field" name="name" placeholder="Sprint N"></label>
+    <label class="lbl">Sprint goal<input class="field" name="goal" placeholder="The one outcome that makes these two weeks a win"></label>
+    <div class="grid2">
+      <label class="lbl">Start<input class="field" type="date" name="start_date" required></label>
+      <label class="lbl">End<input class="field" type="date" name="end_date" required></label>
+    </div>
+    <div class="dlg-foot"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn primary" type="submit" id="sprintSubmit">Create sprint</button></div>
+  </form>
+</dialog>
+
+<!-- close sprint dialog -->
+<dialog id="closeDlg" class="wide">
+  <form class="dlg" id="closeForm">
+    <h3>Close <span id="closeWhat"></span></h3>
+    <div class="summary" id="closeSummary"></div>
+    <p class="lead" id="closeLead"></p>
+    <div class="close-list" id="closeList"></div>
+    <div class="dlg-foot"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Close sprint</button></div>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+"use strict";
+const COLS = [
+  {id:"todo", name:"To do", color:"var(--faint)"},
+  {id:"doing", name:"In progress", color:"var(--info)"},
+  {id:"blocked", name:"Blocked", color:"var(--warn)"},
+  {id:"done", name:"Done", color:"var(--ok)"},
+];
+const OPEN = new Set(["todo","doing","blocked"]);
+const CAT = {"underestimated":"Underestimated","blocked":"Blocked","low-energy":"Low energy","priority-shift":"Priority shift","forgot":"Forgot","external":"External","other":"Other"};
+const STATE_NAME = {todo:"To do",doing:"In progress",blocked:"Blocked",done:"Done",dropped:"Dropped"};
+
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d){ try { const v = localStorage.getItem("bd:"+k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem("bd:"+k, JSON.stringify(v)); } catch {} },
+};
+
+// ---------- dates (all as YYYY-MM-DD strings, computed in UTC to avoid DST drift)
+const D = s => { const [y,m,d] = s.slice(0,10).split("-").map(Number); return new Date(Date.UTC(y, m-1, d)); };
+const iso = d => d.toISOString().slice(0,10);
+const addDays = (s, n) => { const d = D(s); d.setUTCDate(d.getUTCDate()+n); return iso(d); };
+const diff = (a, b) => Math.round((D(a) - D(b)) / 864e5);
+const fmt = (s, o={weekday:"short", day:"numeric", month:"short"}) => D(s).toLocaleDateString("en-GB", {...o, timeZone:"UTC"});
+const fmtTime = ts => ts.slice(11,16);
+
+let S = null;
+const ui = { tab: store.get("tab","board"), sprintId: null, areas: new Set(store.get("areas", [])), q: "", ledger: store.get("ledger","spills") };
+let editing = null;      // item id open in drawer, or "new"
+let dState = "todo";
+
+// ---------- api
+async function api(method, url, body){
+  const opts = {method, headers:{}};
+  if (method !== "GET" && method !== "DELETE"){ opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body || {}); }
+  const r = await fetch(url, opts);
+  if (r.status === 401){ location.href = "/login"; throw new Error("Signed out"); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `${r.status} ${r.statusText}`);
+  return j;
+}
+function toast(msg, kind="ok"){
+  const el = document.createElement("div");
+  el.className = "toast " + kind; el.textContent = msg;
+  $("#toasts").append(el);
+  setTimeout(() => el.remove(), kind === "err" ? 6000 : 2600);
+}
+async function act(fn, okMsg){
+  try { const r = await fn(); if (okMsg) toast(okMsg); await load(); return r ?? true; }
+  catch (e){ toast(e.message, "err"); return null; }
+}
+
+// ---------- model helpers
+const sprintById = id => S.sprints.find(s => s.id === id);
+const areaById = id => S.areas.find(a => a.id === id);
+const isOpen = i => OPEN.has(i.state);
+function effDue(i){
+  if (i.due_date) return i.due_date;
+  const sp = i.sprint_id && sprintById(i.sprint_id);
+  return sp ? sp.end_date : null;
+}
+const isLate = i => isOpen(i) && !!effDue(i) && effDue(i) < S.today;
+function dueInfo(i){
+  const d = effDue(i); if (!d) return null;
+  const n = diff(d, S.today), implicit = !i.due_date;
+  const title = (implicit ? "Sprint end: " : "Due ") + fmt(d);
+  if (i.state === "done") return {text: fmt(d), cls:"", title};
+  if (n < 0) return {text: `${-n}d late`, cls:"late", title};
+  if (n === 0) return {text:"due today", cls:"today", title};
+  if (n === 1) return {text:"tomorrow", cls:"soon", title};
+  return {text: (implicit ? "by " : "") + fmt(d, {day:"numeric", month:"short"}), cls: n <= 3 ? "soon" : "", title};
+}
+function sprintStatus(sp){
+  if (sp.closed_at) return "closed";
+  if (sp.start_date > S.today) return "upcoming";
+  if (sp.end_date < S.today) return "ended";
+  return "active";
+}
+function defaultSprintId(){
+  if (S.active_sprint_id) return S.active_sprint_id;
+  const open = S.sprints.filter(s => !s.closed_at).sort((a,b) => a.start_date.localeCompare(b.start_date));
+  return (open[0] || S.sprints[0] || {}).id ?? null;
+}
+function matches(i){
+  if (ui.areas.size && !ui.areas.has(i.area_id)) return false;
+  if (!ui.q) return true;
+  const q = ui.q.toLowerCase().replace(/^#/, "");
+  return String(i.id) === q || i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q);
+}
+function sortItems(list){
+  return list.sort((a,b) =>
+    (isLate(b) - isLate(a)) || (a.priority - b.priority) ||
+    String(effDue(a) || "9999").localeCompare(String(effDue(b) || "9999")) || a.id - b.id);
+}
+
+// ---------- load + render
+async function load(){
+  try { S = await api("GET", "/api/state"); }
+  catch (e){ $("#root").innerHTML = `<div class="loading">Can't reach the server: ${esc(e.message)}</div>`; return; }
+  if (!ui.sprintId || !sprintById(ui.sprintId)) ui.sprintId = defaultSprintId();
+  render();
+}
+function render(){
+  $$("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === ui.tab));
+  const lateCount = S.items.filter(isLate).length;
+  $('#tabs [data-tab="board"]').innerHTML = "Board" + (lateCount ? `<span class="badge" title="${lateCount} slipped">${lateCount}</span>` : "");
+  const root = $("#root");
+  if (ui.tab === "board") root.innerHTML = viewBoard();
+  else if (ui.tab === "backlog") root.innerHTML = viewBacklog();
+  else if (ui.tab === "ledger") { root.innerHTML = `<div class="loading">Loading ledger…</div>`; viewLedger().then(h => { if (ui.tab === "ledger") root.innerHTML = h; }); }
+  else root.innerHTML = viewSettings();
+  if (ui.tab === "board") wireBoard();
+}
+
+// ---------- board view
+function viewBoard(){
+  if (!S.sprints.length){
+    return `<div class="board"><div class="welcome">
+      <h2>Two weeks. Your commitments. No hiding.</h2>
+      <p>Start a sprint, add what you're committing to, and the bot will chase you every day until each item is done or has an honest reason for slipping.</p>
+      <button class="btn primary" data-act="new-sprint">Plan the first sprint</button></div></div>`;
+  }
+  const sp = sprintById(ui.sprintId);
+  const all = S.items.filter(i => i.sprint_id === sp.id && i.state !== "dropped");
+  const shown = all.filter(matches);
+  const late = all.filter(isLate);
+  const status = sprintStatus(sp);
+  let strip = "";
+  if (late.length && !sp.closed_at){
+    strip = `<div class="strip"><span class="dot"></span><b>${late.length} item${late.length>1?"s":""} slipped past the deadline.</b>
+      <span class="muted">Each one needs a reason.</span>
+      <div class="chips">${late.map(i => `<button class="chip-btn" data-spill="${i.id}">#${i.id} ${esc(i.title.slice(0,32))}${i.title.length>32?"…":""}</button>`).join("")}</div></div>`;
+  } else if (status === "ended"){
+    strip = `<div class="strip warn"><span class="dot"></span><b>${esc(sp.name)} ended ${fmt(sp.end_date)}.</b><span class="muted">Close it and plan the next one.</span>
+      <button class="btn sm" data-act="close-sprint">Close sprint</button></div>`;
+  } else if (status === "active" && sp.mid_check === S.today){
+    strip = `<div class="strip warn"><span class="dot"></span><b>Mid-sprint check today.</b><span class="muted">15 minutes: re-check next week's milestones. Adjusting an item means spilling it, with a reason.</span></div>`;
+  }
+  const cols = COLS.map(c => {
+    let list = shown.filter(i => i.state === c.id);
+    list = c.id === "done" ? list.sort((a,b) => String(b.done_at).localeCompare(String(a.done_at))) : sortItems(list);
+    const empty = c.id === "todo" && !all.length
+      ? `<div class="empty">Nothing committed yet.<br>Press <span class="kbd">N</span> to add your first item.</div>`
+      : list.length ? "" : `<div class="empty">${c.id === "done" ? "Drag finished work here" : "Empty"}</div>`;
+    return `<section class="col" data-col="${c.id}">
+      <div class="col-head" style="--sc:${c.color}"><span class="bar"></span><h3>${c.name}</h3><span class="n">${list.length}</span>
+        ${c.id === "todo" && !sp.closed_at ? `<button class="btn ghost sm add" data-act="new-item" title="Add item">+</button>` : ""}</div>
+      <div class="col-body">${list.map(card).join("")}${empty}</div></section>`;
+  }).join("");
+  return sprintHeader(sp, all) + strip + filters(shown.length, all.length) + `<div class="board" id="board">${cols}</div>`;
+}
+
+function sprintHeader(sp, items){
+  const status = sprintStatus(sp);
+  const len = diff(sp.end_date, sp.start_date) + 1;
+  const day = Math.min(Math.max(diff(S.today, sp.start_date) + 1, 0), len);
+  const done = items.filter(i => i.state === "done").length;
+  const total = items.length;
+  const pct = total ? Math.round(100 * done / total) : 0;
+  const R = 32, C = 2 * Math.PI * R;
+  const pills = [];
+  pills.push(`<span class="pill">${fmt(sp.start_date)} → ${fmt(sp.end_date)}</span>`);
+  if (status === "active") pills.push(`<span class="pill accent">Day ${day} of ${len} · ${diff(sp.end_date, S.today)}d left</span>`);
+  if (status === "upcoming") pills.push(`<span class="pill">Starts in ${diff(sp.start_date, S.today)}d</span>`);
+  if (status === "ended") pills.push(`<span class="pill warn">Ended, not closed</span>`);
+  if (status === "closed") pills.push(`<span class="pill ok">Closed ${fmt(sp.closed_at)}</span>`);
+  if (sp.spills) pills.push(`<span class="pill warn">↻ ${sp.spills} spill${sp.spills>1?"s":""}</span>`);
+  if (sp.mid_check && status !== "closed") pills.push(`<span class="pill" title="Mid-sprint check">🧭 ${fmt(sp.mid_check, {weekday:"short", day:"numeric", month:"short"})}</span>`);
+  const options = S.sprints.map(s => `<option value="${s.id}" ${s.id === sp.id ? "selected" : ""}>${esc(s.name)} · ${sprintStatus(s)}</option>`).join("");
+  return `<section class="sprint">
+    <div>
+      <div class="s-pick"><select id="sprintPick" aria-label="Choose sprint">${options}</select></div>
+      <h1 class="s-name">${esc(sp.name)}</h1>
+      <div class="s-goal">${esc(sp.goal)}</div>
+      <div class="s-dates">${pills.join("")}</div>
+    </div>
+    <div class="ring-wrap">
+      <div class="ring"><svg width="76" height="76" viewBox="0 0 76 76">
+        <circle cx="38" cy="38" r="${R}" stroke="var(--line)" stroke-width="7" fill="none"/>
+        <circle cx="38" cy="38" r="${R}" stroke="url(#rg)" stroke-width="7" fill="none" stroke-linecap="round"
+          stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct/100)}" style="transition:stroke-dashoffset .6s"/>
+        <defs><linearGradient id="rg"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-2)"/></linearGradient></defs>
+      </svg><div class="pct">${pct}%</div></div>
+      <div class="ring-stats"><span><b>${done}</b> / ${total} done</span><span><b>${total - done}</b> remaining</span><span><b>${items.filter(isLate).length}</b> slipped</span></div>
+    </div>
+    <div class="burn">${burndown(sp, items)}</div>
+    <div class="s-actions">
+      ${!sp.closed_at ? `<button class="btn sm" data-act="edit-sprint">Edit</button><button class="btn sm" data-act="close-sprint">Close sprint</button>` : ""}
+      <button class="btn sm" data-act="new-sprint">+ Sprint</button>
+    </div>
+  </section>`;
+}
+
+function burndown(sp, items){
+  const len = diff(sp.end_date, sp.start_date) + 1;
+  const total = items.length;
+  const head = `<div class="burn-head"><span>Burndown</span><span>${total ? total + " items" : "no items"}</span></div>`;
+  if (!total) return head + `<svg viewBox="0 0 300 78"><line x1="0" y1="70" x2="300" y2="70" stroke="var(--line)" stroke-dasharray="3 4"/></svg>`;
+  const W = 300, H = 78, P = 6;
+  const max = Math.max(total, 1);
+  const x = d => P + (W - 2*P) * (len > 1 ? d / (len - 1) : 0);
+  const y = v => P + (H - 2*P) * (1 - v / max);
+  const last = sp.closed_at ? len - 1 : Math.min(diff(S.today, sp.start_date), len - 1);
+  const pts = [];
+  for (let d = 0; d <= last; d++){
+    const day = addDays(sp.start_date, d);
+    const rem = items.filter(i => i.created_at.slice(0,10) <= day && !(i.done_at && i.done_at.slice(0,10) <= day)).length;
+    pts.push([x(d), y(rem)]);
+  }
+  const line = pts.map((p, k) => (k ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = pts.length ? `${line} L${pts.at(-1)[0].toFixed(1)} ${y(0)} L${pts[0][0].toFixed(1)} ${y(0)} Z` : "";
+  const tx = last >= 0 ? x(last) : null;
+  return head + `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Burndown chart">
+    <defs><linearGradient id="bg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    <line x1="${x(0)}" y1="${y(0)}" x2="${x(len-1)}" y2="${y(0)}" stroke="var(--line)"/>
+    <line x1="${x(0)}" y1="${y(total)}" x2="${x(len-1)}" y2="${y(0)}" stroke="var(--faint)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
+    ${pts.length ? `<path d="${area}" fill="url(#bg)"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` : ""}
+    ${tx !== null && pts.length ? `<circle cx="${pts.at(-1)[0]}" cy="${pts.at(-1)[1]}" r="3.5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>` : ""}
+  </svg>`;
+}
+
+function filters(shown, total){
+  const chips = S.areas.map(a => `<button class="fchip ${ui.areas.has(a.id) ? "on" : ""}" data-area="${a.id}" style="--c:${a.color}"><i></i>${esc(a.name)}</button>`).join("");
+  return `<div class="filters">${chips}${ui.areas.size ? `<button class="btn ghost sm" data-act="clear-areas">Clear</button>` : ""}
+    <span class="count">${shown === total ? total + " items" : `${shown} of ${total} items`}</span></div>`;
+}
+
+function card(i){
+  const a = areaById(i.area_id), due = dueInfo(i), late = isLate(i);
+  return `<article class="card ${i.state} ${late ? "late" : ""}" draggable="true" data-id="${i.id}" tabindex="0" style="--area:${a ? a.color : "var(--line-2)"}">
+    <div class="card-top"><span class="cid">#${i.id}</span>${a ? `<span class="tag">${esc(a.name)}</span>` : ""}<span class="prio p${i.priority}">P${i.priority}</span></div>
+    <div class="ctitle">${esc(i.title)}</div>
+    <div class="cmeta">${due ? `<span class="due ${due.cls}" title="${esc(due.title)}">${esc(due.text)}</span>` : ""}${i.spill_count ? `<span class="spills" title="Spilled ${i.spill_count}×">↻ ${i.spill_count}</span>` : ""}${i.evidence ? `<span class="ev" title="${esc(i.evidence)}">◆ evidence</span>` : ""}</div>
+    ${late ? `<button class="reason-btn" data-spill="${i.id}">Slipped · give a reason</button>` : ""}
+  </article>`;
+}
+
+function wireBoard(){
+  const board = $("#board"); if (!board) return;
+  let dragId = null;
+  board.addEventListener("dragstart", e => {
+    const c = e.target.closest(".card"); if (!c) return;
+    dragId = +c.dataset.id; c.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", c.dataset.id);
+  });
+  board.addEventListener("dragend", e => { e.target.closest?.(".card")?.classList.remove("dragging"); $$(".col.over").forEach(c => c.classList.remove("over")); });
+  $$(".col", board).forEach(col => {
+    col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("over"); });
+    col.addEventListener("dragleave", e => { if (!col.contains(e.relatedTarget)) col.classList.remove("over"); });
+    col.addEventListener("drop", async e => {
+      e.preventDefault(); col.classList.remove("over");
+      const id = dragId ?? +e.dataTransfer.getData("text/plain"); dragId = null;
+      const it = S.items.find(i => i.id === id); const to = col.dataset.col;
+      if (!it || it.state === to) return;
+      it.state = to; render();                       // optimistic
+      await act(() => api("PATCH", `/api/items/${id}`, {state: to}), to === "done" ? `#${id} done ✓` : null);
+    });
+  });
+}
+
+// ---------- backlog view
+function viewBacklog(){
+  const openSprints = S.sprints.filter(s => !s.closed_at);
+  const items = sortItems(S.items.filter(i => !i.sprint_id && isOpen(i) && matches(i)));
+  const upcoming = openSprints.filter(s => sprintStatus(s) === "upcoming");
+  const areaOpts = `<option value="">No area</option>` + S.areas.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join("");
+  const target = openSprints.sort((a,b) => a.start_date.localeCompare(b.start_date));
+  const row = (i, plan = true) => {
+    const a = areaById(i.area_id), due = dueInfo(i);
+    return `<li class="row" data-open="${i.id}">
+      <span class="cid">#${i.id}</span>
+      <span class="t">${a ? `<span class="tag" style="--area:${a.color}">${esc(a.name)}</span> ` : ""}${esc(i.title)}</span>
+      <span class="m">${due ? `<span class="pill ${due.cls === "late" ? "danger" : ""}">${esc(due.text)}</span>` : ""}<span class="prio p${i.priority}">P${i.priority}</span></span>
+      <span class="m">${plan && target.length ? `<select class="field" style="padding:4px 8px;width:auto" data-plan="${i.id}" onclick="event.stopPropagation()">
+          <option value="">Plan into…</option>${target.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select>` : ""}</span>
+    </li>`;
+  };
+  return `<div class="stack"><section class="panel">
+    <div class="panel-head"><h2>Backlog</h2><span class="sub">Ideas and future work. Nothing here is a commitment until you pull it into a sprint.</span></div>
+    <form class="quick" id="quickAdd"><input name="title" placeholder="Add to backlog and press Enter…" maxlength="200" autocomplete="off"><select name="area_id">${areaOpts}</select><button class="btn" type="submit">Add</button></form>
+    ${items.length ? `<ul class="rows">${items.map(row).join("")}</ul>` : `<div class="empty" style="margin:18px">Backlog is empty.</div>`}
+  </section>
+  ${upcoming.map(sp => {
+    const its = sortItems(S.items.filter(i => i.sprint_id === sp.id && i.state !== "dropped"));
+    return `<section class="panel"><div class="panel-head"><h2>${esc(sp.name)}</h2><span class="sub">Starts ${fmt(sp.start_date)} · ${its.length} planned</span>
+      <div class="spacer"></div><button class="btn sm" data-goto-sprint="${sp.id}">Open on board</button></div>
+      ${its.length ? `<ul class="rows">${its.map(i => row(i, false)).join("")}</ul>` : `<div class="empty" style="margin:18px">Nothing planned yet.</div>`}</section>`;
+  }).join("")}</div>`;
+}
+
+// ---------- ledger view
+const EV_ICON = {created:"+", moved:"→", planned:"⇢", edited:"✎", spilled:"↻", dropped:"✕", sprint_closed:"🏁", sprint_created:"◷"};
+async function viewLedger(){
+  let events;
+  try { events = await api("GET", "/api/events?limit=600"); } catch (e){ return `<div class="loading">${esc(e.message)}</div>`; }
+  const spills = events.filter(e => e.kind === "spilled"), drops = events.filter(e => e.kind === "dropped");
+  const act = S.active_sprint_id;
+  const spSpills = spills.filter(e => e.sprint_id === act).length;
+  const cats = {}; [...spills, ...drops].forEach(e => cats[e.category || "other"] = (cats[e.category || "other"] || 0) + 1);
+  const catRows = Object.entries(cats).sort((a,b) => b[1] - a[1]);
+  const maxCat = Math.max(1, ...catRows.map(r => r[1]));
+  const byArea = {}; spills.forEach(e => { const k = e.area_name || "No area"; byArea[k] = (byArea[k] || 0) + 1; });
+  const areaRows = Object.entries(byArea).sort((a,b) => b[1] - a[1]);
+  const maxArea = Math.max(1, ...areaRows.map(r => r[1]));
+  const doneAll = S.items.filter(i => i.state === "done").length;
+  const closed = events.filter(e => e.kind === "sprint_closed");
+  const top = catRows[0];
+  const bars = (rows, max, label) => rows.length ? rows.map(([k, v]) =>
+    `<div class="bar-row"><span>${esc(label ? label(k) : k)}</span><div class="track"><div class="fill" style="width:${100*v/max}%"></div></div><span class="num">${v}</span></div>`).join("")
+    : `<div class="muted small">No spills yet.</div>`;
+
+  const list = ui.ledger === "spills" ? events.filter(e => ["spilled","dropped","sprint_closed"].includes(e.kind) || (e.kind === "moved" && e.to_val === "done")) : events;
+  let lastDay = "", tl = "";
+  for (const e of list){
+    const day = e.ts.slice(0,10);
+    if (day !== lastDay){ tl += `<li class="tday">${day === S.today ? "Today" : fmt(day, {weekday:"long", day:"numeric", month:"long"})}</li>`; lastDay = day; }
+    const ico = e.kind === "moved" && e.to_val === "done" ? "done" : e.kind.startsWith("sprint") ? "sprint" : e.kind;
+    const it = e.item_id ? `<a href="#" data-open="${e.item_id}" style="color:inherit"><span class="cid">#${e.item_id}</span> <b>${esc(e.item_title || "(deleted)")}</b></a>` : "";
+    let what;
+    switch (e.kind){
+      case "spilled": what = `${it} spilled <span class="muted">· ${esc(e.from_val)} → ${esc(e.to_val)}</span> <span class="pill warn">${esc(CAT[e.category] || e.category)}</span>`; break;
+      case "dropped": what = `${it} dropped <span class="pill danger">${esc(CAT[e.category] || e.category)}</span>`; break;
+      case "moved": what = `${it} <span class="muted">${esc(STATE_NAME[e.from_val])} → </span>${esc(STATE_NAME[e.to_val])}`; break;
+      case "created": what = `${it} created <span class="muted">in ${esc(e.to_val)}</span>`; break;
+      case "planned": what = `${it} <span class="muted">${esc(e.from_val)} → ${esc(e.to_val)}</span>`; break;
+      case "edited": what = `${it} <span class="muted">edited ${esc(e.note)}</span>`; break;
+      case "sprint_closed": what = `<b>${esc(e.sprint_name)}</b> closed <span class="muted">· ${esc(e.note)}</span>`; break;
+      case "sprint_created": what = `<b>${esc(e.sprint_name)}</b> planned <span class="muted">· ${esc(e.note)}</span>`; break;
+      default: what = `${it} ${esc(e.kind)}`;
+    }
+    const why = (e.kind === "spilled" || e.kind === "dropped") && e.note ? `<div class="why ${e.kind === "dropped" ? "drop" : ""}">“${esc(e.note)}”</div>` : "";
+    tl += `<li class="ev-row"><span class="ev-ico ${ico}">${EV_ICON[e.kind] && ico !== "done" ? EV_ICON[e.kind] : "✓"}</span>
+      <div class="ev-main"><div class="what">${what}${e.source === "telegram" ? ` <span class="pill">via Telegram</span>` : ""}</div>${why}</div><span class="ev-time">${fmtTime(e.ts)}</span></li>`;
+  }
+  return `<div class="stack">
+    <div class="tiles">
+      <div class="tile"><div class="k">Spills this sprint</div><div class="v" style="color:${spSpills ? "var(--warn)" : "inherit"}">${spSpills}</div><div class="s">${spills.length} all-time</div></div>
+      <div class="tile"><div class="k">Dropped</div><div class="v">${drops.length}</div><div class="s">with a reason, always</div></div>
+      <div class="tile"><div class="k">Delivered</div><div class="v" style="color:var(--ok)">${doneAll}</div><div class="s">items done, all-time</div></div>
+      <div class="tile"><div class="k">Sprints closed</div><div class="v">${closed.length}</div><div class="s">${closed[0] ? esc(closed[0].note) : "none yet"}</div></div>
+      <div class="tile"><div class="k">Top reason</div><div class="v" style="font-size:20px;padding-top:6px">${top ? esc(CAT[top[0]] || top[0]) : "–"}</div><div class="s">${top ? top[1] + " times" : "no spills yet"}</div></div>
+    </div>
+    <div class="split">
+      <section class="panel"><div class="panel-head"><h2>Why things slip</h2></div><div class="bars">${bars(catRows, maxCat, k => CAT[k] || k)}</div></section>
+      <section class="panel"><div class="panel-head"><h2>Where things slip</h2></div><div class="bars">${bars(areaRows, maxArea)}</div></section>
+    </div>
+    <section class="panel">
+      <div class="panel-head"><h2>Ledger</h2><span class="sub">Append-only. Nothing here can be edited away.</span><div class="spacer"></div>
+        <div class="seg-mini" id="ledgerSeg"><button data-l="spills" class="${ui.ledger === "spills" ? "on" : ""}">Spills &amp; wins</button><button data-l="all" class="${ui.ledger === "all" ? "on" : ""}">Everything</button></div></div>
+      <ol class="timeline">${tl || `<li class="empty" style="margin-top:12px">Nothing logged yet.</li>`}</ol>
+    </section></div>`;
+}
+
+// ---------- settings view
+function viewSettings(){
+  const st = S.settings;
+  const tg = !st.telegram_configured
+    ? `<div class="status off"><i></i><b>Not configured</b></div><p class="muted small">Create a bot with <code>@BotFather</code>, put the token in <code>TELEGRAM_BOT_TOKEN</code>, restart, then send <code>/start</code> to the bot.</p>`
+    : !st.telegram_linked
+    ? `<div class="status off"><i></i><b>Bot running, chat not linked</b></div><p class="muted small">Open ${st.telegram_bot ? `<code>@${esc(st.telegram_bot)}</code>` : "your bot"} in Telegram and send <code>/start</code>. The first chat to do so becomes the only one it talks to.</p>`
+    : `<div class="status on"><i></i><b>Connected</b>${st.telegram_bot ? `<span class="muted">@${esc(st.telegram_bot)}</span>` : ""}</div>
+       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="tg-test" data-kind="morning">Send morning digest now</button><button class="btn sm" data-act="tg-test" data-kind="evening">Send evening digest now</button></div>
+       <p class="muted small">Commands: <code>/today</code> <code>/overdue</code> <code>/sprint</code> <code>/doing 12</code> <code>/done 12</code></p>`;
+  return `<div class="split">
+    <section class="panel"><div class="panel-head"><h2>Areas</h2><span class="sub">The parts of your life the board tracks.</span></div>
+      <div class="set-body">
+        ${S.areas.map(a => `<div class="area-row"><input type="color" value="${a.color}" data-area-color="${a.id}" aria-label="Color"><input class="field" value="${esc(a.name)}" data-area-name="${a.id}" aria-label="Name"><button class="btn ghost sm" data-area-del="${a.id}" title="Delete area">✕</button></div>`).join("")}
+        <form class="area-row" id="areaAdd"><input type="color" name="color" value="#22d3ee"><input class="field" name="name" placeholder="New area" required><button class="btn sm" type="submit">Add</button></form>
+      </div></section>
+    <div class="stack">
+      <section class="panel"><div class="panel-head"><h2>Telegram</h2></div><div class="set-body">${tg}
+        <form id="alertForm" style="display:grid;gap:8px"><label class="lbl">Daily alert times (24h, ${esc(st.timezone)})
+          <div style="display:flex;gap:8px"><input class="field" name="times" value="${esc(st.alert_times.join(", "))}" placeholder="09:00, 21:00"><button class="btn sm" type="submit">Save</button></div></label>
+          <span class="muted small">First time = morning plan. Last time = evening check. Any in between = check-ins.</span></form>
+      </div></section>
+      <section class="panel"><div class="panel-head"><h2>House rules</h2><span class="sub">Enforced by the server, not just this page.</span></div>
+        <div class="set-body"><ul class="rules">
+          <li><b>Moving a deadline later is a spill.</b> It needs a reason and gets counted.</li>
+          <li><b>Pulling an open item out of a running sprint is a spill.</b></li>
+          <li><b>Running sprints have frozen dates.</b> No stretching the sprint to hide a miss.</li>
+          <li><b>Closing a sprint forces a decision and a reason</b> for every unfinished item.</li>
+          <li><b>Nothing with history can be deleted.</b> Drop it with a reason; the ledger keeps everything.</li>
+          <li><b>Slipped items show up in every Telegram digest</b> until they're done or explained.</li>
+        </ul></div></section>
+      <section class="panel"><div class="panel-head"><h2>Session</h2></div><div class="set-body">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="muted small">Signed in on this device for 30 days.</span><div class="spacer"></div><button class="btn sm danger" data-act="logout">Sign out</button></div></div></section>
+      <section class="panel"><div class="panel-head"><h2>Keyboard</h2></div><div class="set-body small muted">
+        <span><span class="kbd">N</span> new item · <span class="kbd">/</span> search · <span class="kbd">1</span>–<span class="kbd">4</span> tabs · <span class="kbd">Esc</span> close</span></div></section>
+    </div></div>`;
+}
+
+// ---------- drawer
+function fillSelects(it){
+  const f = $("#itemForm");
+  f.area_id.innerHTML = `<option value="">No area</option>` + S.areas.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join("");
+  const sprints = S.sprints.filter(s => !s.closed_at || (it && s.id === it.sprint_id));
+  f.sprint_id.innerHTML = `<option value="">Backlog</option>` + sprints.map(s => `<option value="${s.id}">${esc(s.name)}${s.closed_at ? " (closed)" : ""}</option>`).join("");
+}
+function setDState(s){ dState = s; $$("#dState button").forEach(b => b.classList.toggle("on", b.dataset.state === s)); }
+async function openDrawer(id){
+  const f = $("#itemForm");
+  const it = id === "new" ? null : S.items.find(i => i.id === id);
+  if (id !== "new" && !it) return;
+  editing = id;
+  fillSelects(it);
+  const viewed = sprintById(ui.sprintId);
+  f.title.value = it ? it.title : "";
+  f.description.value = it ? it.description : "";
+  f.evidence.value = it ? it.evidence : "";
+  f.priority.value = it ? it.priority : 2;
+  f.due_date.value = it?.due_date || "";
+  f.area_id.value = it ? (it.area_id ?? "") : (ui.areas.size === 1 ? [...ui.areas][0] : "");
+  f.sprint_id.value = it ? (it.sprint_id ?? "") : (ui.tab === "board" && viewed && !viewed.closed_at ? viewed.id : "");
+  setDState(it ? (it.state === "dropped" ? "todo" : it.state) : "todo");
+  $("#dId").textContent = it ? `#${it.id}` : "New item";
+  $("#dSpills").textContent = it?.spill_count ? `↻ spilled ${it.spill_count}×` : "";
+  $("#dSpills").className = "pill warn" + (it?.spill_count ? "" : " hidden");
+  const ro = it?.state === "dropped";
+  $$("input,select,textarea,#dState button", f).forEach(el => el.disabled = ro);
+  $("#dSave").disabled = ro;
+  $("#dSpill").classList.toggle("hidden", !it || !isOpen(it));
+  $("#dDrop").classList.toggle("hidden", !it || !isOpen(it));
+  $("#dDelete").classList.toggle("hidden", !it || it.spill_count > 0 || it.state === "done" || isLate(it) || ro);
+  $("#dNotice").innerHTML = ro ? `<div class="notice">Dropped. This item is read-only.</div>`
+    : it && isLate(it) ? `<div class="notice">This slipped past ${fmt(effDue(it))}. Finish it, or spill it with a reason.</div>` : "";
+  $("#dHistWrap").classList.toggle("hidden", !it);
+  $("#dHist").innerHTML = "";
+  $("#drawer").classList.add("on"); $("#scrim").classList.add("on"); $("#drawer").setAttribute("aria-hidden", "false");
+  setTimeout(() => (it ? f.title.blur() : f.title.focus()), 50);
+  if (it){
+    try {
+      const ev = await api("GET", `/api/events?item_id=${it.id}`);
+      if (editing !== id) return;
+      $("#dHist").innerHTML = ev.map(e => {
+        const cls = e.kind === "moved" && e.to_val === "done" ? "done" : e.kind;
+        let txt = {created:`Created in ${esc(e.to_val)}`, moved:`${esc(STATE_NAME[e.from_val])} → ${esc(STATE_NAME[e.to_val])}`,
+          planned:`${esc(e.from_val)} → ${esc(e.to_val)}`, edited:`Edited ${esc(e.note)}`,
+          spilled:`Spilled (${esc(CAT[e.category] || e.category)}): ${esc(e.from_val)} → ${esc(e.to_val)}`,
+          dropped:`Dropped (${esc(CAT[e.category] || e.category)})`}[e.kind] || esc(e.kind);
+        if (e.source === "telegram") txt += " · via Telegram";
+        const why = (e.kind === "spilled" || e.kind === "dropped") ? `<div class="why">“${esc(e.note)}”</div>` : "";
+        return `<li class="${cls}"><span></span><div><div class="t">${fmt(e.ts)} ${fmtTime(e.ts)}</div>${txt}${why}</div></li>`;
+      }).join("");
+    } catch {}
+  }
+}
+function closeDrawer(){ editing = null; $("#drawer").classList.remove("on"); $("#scrim").classList.remove("on"); $("#drawer").setAttribute("aria-hidden", "true"); }
+
+$("#itemForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target;
+  const data = {
+    title: f.title.value.trim(), description: f.description.value, evidence: f.evidence.value,
+    area_id: f.area_id.value ? +f.area_id.value : null, sprint_id: f.sprint_id.value ? +f.sprint_id.value : null,
+    priority: +f.priority.value, due_date: f.due_date.value || null, state: dState,
+  };
+  if (!data.title) return toast("Give it a title", "err");
+  if (editing === "new"){
+    const r = await act(() => api("POST", "/api/items", data), "Committed ✓");
+    if (r) closeDrawer();
+  } else {
+    const it = S.items.find(i => i.id === editing);
+    const changed = {};
+    for (const k in data){
+      const v = typeof data[k] === "string" ? data[k].trim() : data[k];
+      if ((v ?? null) !== (it[k] ?? null)) changed[k] = v;
+    }
+    if (!Object.keys(changed).length) return closeDrawer();
+    const r = await act(() => api("PATCH", `/api/items/${editing}`, changed), "Saved");
+    if (r) closeDrawer();
+  }
+});
+$$("#dState button").forEach(b => b.addEventListener("click", () => setDState(b.dataset.state)));
+$("#dClose").onclick = closeDrawer;
+$("#scrim").onclick = closeDrawer;
+$("#dSpill").onclick = () => openSpill(editing);
+$("#dDrop").onclick = () => openDrop(editing);
+$("#dDelete").onclick = async () => {
+  const id = editing;
+  if ($("#dDelete").dataset.armed !== String(id)){ $("#dDelete").dataset.armed = id; $("#dDelete").textContent = "Click again to delete"; setTimeout(() => { $("#dDelete").textContent = "Delete"; delete $("#dDelete").dataset.armed; }, 3000); return; }
+  const r = await act(() => api("DELETE", `/api/items/${id}`), `#${id} deleted`);
+  if (r) closeDrawer();
+};
+
+// ---------- dialogs
+function catChips(el, name){
+  el.innerHTML = Object.entries(CAT).map(([k, v], n) => `<label><input type="radio" name="${name}" value="${k}" ${n === 0 ? "checked" : ""}><span>${v}</span></label>`).join("");
+}
+catChips($("#spillCats"), "category"); catChips($("#dropCats"), "category");
+$$("dialog [data-close]").forEach(b => b.onclick = () => b.closest("dialog").close());
+
+let spillId = null;
+function openSpill(id){
+  const it = S.items.find(i => i.id === id); if (!it) return;
+  spillId = id;
+  const f = $("#spillForm"); f.reset(); catChips($("#spillCats"), "category");
+  $("#spillWhat").textContent = `#${it.id} ${it.title}`;
+  const sp = it.sprint_id && sprintById(it.sprint_id);
+  const canResched = !!sp && sp.end_date >= S.today;
+  $("#optResched").classList.toggle("hidden", !canResched);
+  f.new_due.min = S.today; f.new_due.max = sp ? sp.end_date : "";
+  f.new_due.value = canResched ? (addDays(S.today, 1) <= sp.end_date ? addDays(S.today, 1) : S.today) : "";
+  f.action.value = canResched ? "reschedule" : "next_sprint";
+  $("#spillDlg").showModal();
+  setTimeout(() => f.reason.focus(), 30);
+}
+$("#spillForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target;
+  const body = {reason: f.reason.value, category: f.category.value, action: f.action.value, new_due: f.new_due.value};
+  const r = await act(() => api("POST", `/api/items/${spillId}/spill`, body), "Spill logged. Honest beats hidden.");
+  if (r){ $("#spillDlg").close(); closeDrawer(); }
+});
+$("#spillForm").new_due.addEventListener("focus", () => { $("#spillForm").action.value = "reschedule"; });
+
+let dropId = null;
+function openDrop(id){
+  const it = S.items.find(i => i.id === id); if (!it) return;
+  dropId = id; const f = $("#dropForm"); f.reset(); catChips($("#dropCats"), "category");
+  $$("#dropCats input").forEach(i => i.checked = i.value === "priority-shift");
+  $("#dropWhat").textContent = `#${it.id} ${it.title}`;
+  $("#dropDlg").showModal(); setTimeout(() => f.reason.focus(), 30);
+}
+$("#dropForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target;
+  const r = await act(() => api("POST", `/api/items/${dropId}/drop`, {reason: f.reason.value, category: f.category.value}), "Dropped and logged");
+  if (r){ $("#dropDlg").close(); closeDrawer(); }
+});
+
+let sprintEdit = null;
+function openSprint(edit){
+  const f = $("#sprintForm"); f.reset();
+  sprintEdit = edit ? sprintById(ui.sprintId) : null;
+  const sp = sprintEdit;
+  $("#sprintDlgTitle").textContent = sp ? `Edit ${sp.name}` : "Plan a new sprint";
+  $("#sprintDlgLead").textContent = sp ? (sprintStatus(sp) === "active" ? "Dates are frozen while the sprint runs." : "")
+    : "Two weeks. Planning takes about 45 minutes: look at last sprint's spills in the Ledger first, then commit.";
+  $("#sprintSubmit").textContent = sp ? "Save" : "Create sprint";
+  if (sp){
+    f.name.value = sp.name; f.goal.value = sp.goal; f.start_date.value = sp.start_date; f.end_date.value = sp.end_date;
+  } else {
+    const latest = S.sprints.filter(s => !s.closed_at).sort((a,b) => b.end_date.localeCompare(a.end_date))[0];
+    const start = latest && latest.end_date >= S.today ? addDays(latest.end_date, 1) : S.today;
+    f.name.value = `Sprint ${S.sprints.length + 1}`; f.start_date.value = start; f.end_date.value = addDays(start, 13);
+  }
+  const frozen = sp && sp.start_date <= S.today;
+  f.start_date.disabled = f.end_date.disabled = !!frozen;
+  $("#sprintDlg").showModal();
+}
+$("#sprintForm").start_date.addEventListener("change", e => { if (!sprintEdit && e.target.value) $("#sprintForm").end_date.value = addDays(e.target.value, 13); });
+$("#sprintForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target;
+  const body = {name: f.name.value, goal: f.goal.value};
+  if (!f.start_date.disabled){ body.start_date = f.start_date.value; body.end_date = f.end_date.value; }
+  const r = await act(() => sprintEdit ? api("PATCH", `/api/sprints/${sprintEdit.id}`, body) : api("POST", "/api/sprints", body), sprintEdit ? "Sprint saved" : "Sprint planned");
+  if (r){ if (!sprintEdit && r.id){ ui.sprintId = r.id; render(); } $("#sprintDlg").close(); }
+});
+
+function openClose(){
+  const sp = sprintById(ui.sprintId); if (!sp || sp.closed_at) return;
+  const items = S.items.filter(i => i.sprint_id === sp.id && i.state !== "dropped");
+  const open = sortItems(items.filter(isOpen)), done = items.length - open.length;
+  $("#closeWhat").textContent = sp.name;
+  $("#closeSummary").innerHTML = `<span class="pill ok">${done} done</span><span class="pill ${open.length ? "warn" : ""}">${open.length} unfinished</span><span class="pill">${sp.spills} spills during sprint</span>`;
+  $("#closeLead").textContent = open.length ? "Every unfinished item needs a decision and a reason. Carried-over items count as spills." : "Clean sprint. Nothing to carry over. 🎉";
+  const catOpts = Object.entries(CAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
+  $("#closeList").innerHTML = open.map(i => `<div class="close-row" data-id="${i.id}">
+      <div><span class="cid">#${i.id}</span> <b>${esc(i.title)}</b> ${i.spill_count ? `<span class="pill warn">↻ ${i.spill_count}</span>` : ""}</div>
+      <div class="ctl"><select name="action"><option value="next_sprint">→ Next sprint</option><option value="backlog">→ Backlog</option><option value="drop">✕ Drop</option></select>
+        <select name="category">${catOpts}</select>
+        <input name="reason" placeholder="Why didn't this get done?" required minlength="3"></div></div>`).join("");
+  $("#closeDlg").showModal();
+}
+$("#closeForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const decisions = $$("#closeList .close-row").map(r => ({item_id: +r.dataset.id, action: $("[name=action]", r).value, category: $("[name=category]", r).value, reason: $("[name=reason]", r).value}));
+  const r = await act(() => api("POST", `/api/sprints/${ui.sprintId}/close`, {decisions}), "Sprint closed. Time to plan the next one.");
+  if (r){ $("#closeDlg").close(); if (r.next_sprint_id) ui.sprintId = r.next_sprint_id; else ui.sprintId = null; await load(); }
+});
+
+// ---------- global events
+document.addEventListener("click", async e => {
+  const t = e.target;
+  const tab = t.closest("#tabs button"); if (tab){ ui.tab = tab.dataset.tab; store.set("tab", ui.tab); render(); return; }
+  const sp = t.closest("[data-spill]"); if (sp){ e.stopPropagation(); openSpill(+sp.dataset.spill); return; }
+  const op = t.closest("[data-open]"); if (op){ e.preventDefault(); openDrawer(+op.dataset.open); return; }
+  const c = t.closest(".card"); if (c){ openDrawer(+c.dataset.id); return; }
+  const ar = t.closest("[data-area]"); if (ar){ const id = +ar.dataset.area; ui.areas.has(id) ? ui.areas.delete(id) : ui.areas.add(id); store.set("areas", [...ui.areas]); render(); return; }
+  const g = t.closest("[data-goto-sprint]"); if (g){ ui.sprintId = +g.dataset.gotoSprint; ui.tab = "board"; store.set("tab", "board"); render(); return; }
+  const l = t.closest("#ledgerSeg [data-l]"); if (l){ ui.ledger = l.dataset.l; store.set("ledger", ui.ledger); render(); return; }
+  const del = t.closest("[data-area-del]"); if (del){ await act(() => api("DELETE", `/api/areas/${del.dataset.areaDel}`), "Area removed"); return; }
+  const a = t.closest("[data-act]"); if (!a) return;
+  switch (a.dataset.act){
+    case "new-item": openDrawer("new"); break;
+    case "new-sprint": openSprint(false); break;
+    case "edit-sprint": openSprint(true); break;
+    case "close-sprint": openClose(); break;
+    case "clear-areas": ui.areas.clear(); store.set("areas", []); render(); break;
+    case "logout": await fetch("/api/logout", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); location.href = "/login"; break;
+    case "tg-test": act(() => api("POST", "/api/telegram/test", {kind: a.dataset.kind}), "Sent to Telegram"); break;
+  }
+});
+document.addEventListener("change", async e => {
+  const t = e.target;
+  if (t.id === "sprintPick"){ ui.sprintId = +t.value; render(); }
+  else if (t.dataset.plan && t.value){ await act(() => api("PATCH", `/api/items/${t.dataset.plan}`, {sprint_id: +t.value}), "Planned into sprint"); }
+  else if (t.dataset.areaColor){ await act(() => api("PATCH", `/api/areas/${t.dataset.areaColor}`, {color: t.value})); }
+  else if (t.dataset.areaName){ await act(() => api("PATCH", `/api/areas/${t.dataset.areaName}`, {name: t.value}), "Renamed"); }
+});
+document.addEventListener("submit", async e => {
+  const f = e.target;
+  if (f.id === "quickAdd"){
+    e.preventDefault();
+    const title = f.title.value.trim(); if (!title) return;
+    const r = await act(() => api("POST", "/api/items", {title, area_id: f.area_id.value ? +f.area_id.value : null}), "Added to backlog");
+    if (r) $("#quickAdd [name=title]")?.focus();
+  } else if (f.id === "areaAdd"){
+    e.preventDefault();
+    await act(() => api("POST", "/api/areas", {name: f.name.value, color: f.color.value}), "Area added");
+  } else if (f.id === "alertForm"){
+    e.preventDefault();
+    await act(() => api("PATCH", "/api/settings", {alert_times: f.times.value}), "Alert times saved");
+  }
+});
+$("#newBtn").onclick = () => openDrawer("new");
+$("#q").addEventListener("input", e => { ui.q = e.target.value.trim(); if (ui.tab === "board" || ui.tab === "backlog") render(); });
+document.addEventListener("keydown", e => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.querySelector("dialog[open]");
+  if (e.key === "Escape" && editing && !document.querySelector("dialog[open]")){ closeDrawer(); return; }
+  if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "n" || e.key === "N"){ e.preventDefault(); openDrawer("new"); }
+  else if (e.key === "/"){ e.preventDefault(); $("#q").focus(); }
+  else if ("1234".includes(e.key) && e.key.length === 1){ ui.tab = ["board","backlog","ledger","settings"][+e.key - 1]; store.set("tab", ui.tab); render(); }
+  else if (e.key === "Enter" && document.activeElement?.classList.contains("card")){ openDrawer(+document.activeElement.dataset.id); }
+});
+
+// ---------- theme
+const THEMES = ["system", "dark", "light"];
+const THEME_ICON = {system:"◐", dark:"☾", light:"☀"};
+function applyTheme(t){
+  if (t === "system") document.documentElement.removeAttribute("data-theme"); else document.documentElement.dataset.theme = t;
+  $("#themeBtn").textContent = THEME_ICON[t]; $("#themeBtn").title = `Theme: ${t}`;
+}
+let theme = store.get("theme", "system"); applyTheme(theme);
+$("#themeBtn").onclick = () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; store.set("theme", theme); applyTheme(theme); };
+
+// ---------- refresh (picks up /done from Telegram)
+setInterval(() => { if (document.visibilityState === "visible" && !editing && !document.querySelector("dialog[open]")) load(); }, 60000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !editing) load(); });
+load();
+</script>
+</body>
+</html>
