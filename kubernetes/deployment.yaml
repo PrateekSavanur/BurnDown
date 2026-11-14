@@ -25,7 +25,7 @@ spec:
         fsGroup: 10001
       containers:
         - name: burndown
-          image: prateeksavanur/burndown:latest
+          image: prateeksavanur/burndown:bfe4d839e47080a114ab56a82a99a4fbc2ee02d3
           ports:
             - containerPort: 8088
           env:
