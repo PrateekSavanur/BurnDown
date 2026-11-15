@@ -18,6 +18,7 @@
   --ok:#159a5d; --ok-soft:rgba(21,154,93,.12); --info:#2f6fe4;
   --shadow:0 1px 2px rgba(15,20,35,.05),0 6px 20px rgba(15,20,35,.06);
   --shadow-lg:0 20px 60px rgba(15,20,35,.18);
+  --r1:#d6455d; --r2:#eea0ab; --r3:#c3c8d3; --r4:#86cfbf; --r5:#16977f; --cell-empty:#eceef4;
   --radius:14px;
   --font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --display:"Space Grotesk","Inter",system-ui,sans-serif;
@@ -32,6 +33,7 @@
     --ok:#3ddc97; --ok-soft:rgba(61,220,151,.12); --info:#5b9cff;
     --shadow:0 1px 0 rgba(255,255,255,.02) inset,0 8px 24px rgba(0,0,0,.35);
     --shadow-lg:0 30px 80px rgba(0,0,0,.6);
+    --r1:#ff6b80; --r2:#9a4a58; --r3:#465063; --r4:#2f8574; --r5:#3ddcb4; --cell-empty:#161b26;
   }
 }
 :root[data-theme="dark"]{
@@ -42,6 +44,7 @@
   --ok:#3ddc97; --ok-soft:rgba(61,220,151,.12); --info:#5b9cff;
   --shadow:0 1px 0 rgba(255,255,255,.02) inset,0 8px 24px rgba(0,0,0,.35);
   --shadow-lg:0 30px 80px rgba(0,0,0,.6);
+  --r1:#ff6b80; --r2:#9a4a58; --r3:#465063; --r4:#2f8574; --r5:#3ddcb4; --cell-empty:#161b26;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -189,6 +192,66 @@ textarea.field{resize:vertical;min-height:80px}
 .row .m{display:flex;gap:6px;align-items:center}
 @media (max-width:640px){.row{grid-template-columns:auto minmax(0,1fr)}.row .m{grid-column:2}}
 .stack{display:grid;gap:14px}
+/* ---------- journal ---------- */
+.jnav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.jnav input[type=date]{width:auto}
+.jsave{font:12px var(--mono);color:var(--faint);min-width:70px}
+.jsave.ok{color:var(--ok)}
+.jsave.err{color:var(--danger)}
+.jgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:14px}
+@media (max-width:980px){.jgrid{grid-template-columns:1fr}}
+.jsec{padding:14px 18px;display:grid;gap:8px;border-top:1px solid var(--line)}
+.jsec:first-child{border-top:0}
+.jsec > .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.rate{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.rate button{border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:10px 4px 8px;display:grid;gap:2px;justify-items:center;color:var(--muted);font-size:12px;font-weight:600}
+.rate button span{font-size:24px;line-height:1.1;filter:grayscale(.6);opacity:.8}
+.rate button:hover{border-color:var(--line-2)}
+.rate button.on{border-color:var(--rc);background:color-mix(in srgb,var(--rc) 22%,var(--panel));color:var(--text)}
+.rate button.on span{filter:none;opacity:1}
+.tri{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--panel-2);gap:3px}
+.tri button{border:0;background:none;border-radius:7px;padding:6px 4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.tri button.on{background:var(--panel);color:var(--text);box-shadow:var(--shadow);outline:1px solid var(--rc,var(--accent))}
+.jrow{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;font-size:13px}
+@media (max-width:420px){.jrow{grid-template-columns:1fr}}
+.jtags{display:flex;flex-wrap:wrap;gap:6px}
+.jtags button{border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:12.5px;color:var(--muted);background:var(--panel-2)}
+.jtags button.on{border-color:var(--accent);color:var(--text);background:var(--accent-soft)}
+textarea.jbody{min-height:280px;line-height:1.6;font-size:14.5px}
+.jboard{display:grid;gap:4px;font-size:13px}
+.jboard a{color:inherit}
+.hm{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,14px);grid-auto-columns:14px;justify-content:start;gap:3px;overflow-x:auto;padding:2px 0 6px}
+.hm i{display:block;width:14px;height:14px;border-radius:3px;background:var(--cell-empty);cursor:pointer}
+.hm i.future{visibility:hidden}
+.hm i.norate,.legend i.norate{box-shadow:inset 0 0 0 1.5px var(--faint)}
+.hm i.sel{outline:2px solid var(--text);outline-offset:1px}
+.hm i:hover{outline:2px solid var(--accent);outline-offset:1px}
+.hm-wrap{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;align-items:start}
+.hm-days{display:grid;grid-template-rows:repeat(7,14px);gap:3px;font:10px/14px var(--mono);color:var(--faint)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:var(--c)}
+.trend svg{width:100%;display:block;overflow:visible}
+.tip{position:fixed;z-index:120;pointer-events:none;background:var(--raise);border:1px solid var(--line-2);border-radius:10px;padding:8px 10px;font-size:12.5px;box-shadow:var(--shadow-lg);max-width:260px;display:none}
+.tip b{font-family:var(--display)}
+.tip .muted{font-size:12px}
+.seg3{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;background:var(--panel)}
+.seg3 > span{display:block;height:100%}
+.seg3 > span:first-child{border-radius:4px 0 0 4px}.seg3 > span:last-child{border-radius:0 4px 4px 0}
+.arow{display:grid;grid-template-columns:130px 1fr 44px;gap:10px;align-items:center;font-size:13px;padding:4px 0}
+.arow .num{font:600 12px var(--mono);color:var(--muted);text-align:right}
+.irow{display:grid;grid-template-columns:minmax(0,1fr) 120px 64px;gap:10px;align-items:center;font-size:13px;padding:5px 0;border-top:1px solid var(--line)}
+.irow .bar2{position:relative;height:8px;background:var(--panel-2);border-radius:4px}
+.irow .bar2::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line-2)}
+.irow .bar2 span{position:absolute;top:0;bottom:0;border-radius:4px}
+.irow .num{font:600 12px var(--mono);text-align:right}
+.hrow{display:grid;grid-template-columns:96px 34px minmax(0,1fr);gap:12px;align-items:start;padding:10px 12px;border-radius:10px;cursor:pointer}
+.hrow:hover{background:var(--panel-2)}
+.hrow .d{font:600 12px var(--mono);color:var(--muted);padding-top:3px}
+.hrow .r{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font:700 13px var(--display);color:#fff;background:var(--cell-empty)}
+.hrow .snip{color:var(--muted);font-size:13px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.hrow .tg{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.hrow .tg span{font-size:11px;padding:0 6px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted)}
+
 /* ---------- pending ---------- */
 .quick .when-date{width:auto}
 .pgroup{padding:4px 6px 8px}
@@ -331,6 +394,7 @@ dialog::backdrop{background:rgba(5,6,10,.55);backdrop-filter:blur(3px)}
     <nav class="tabs" id="tabs">
       <button data-tab="board">Board</button>
       <button data-tab="pending">Pending</button>
+      <button data-tab="journal">Journal</button>
       <button data-tab="backlog">Backlog</button>
       <button data-tab="ledger">Ledger</button>
       <button data-tab="settings">Settings</button>
@@ -439,6 +503,7 @@ dialog::backdrop{background:rgba(5,6,10,.55);backdrop-filter:blur(3px)}
 </dialog>
 
 <div class="toasts" id="toasts"></div>
+<div class="tip" id="tip"></div>
 
 <script>
 "use strict";
@@ -549,11 +614,17 @@ function render(){
   const lateCount = S.items.filter(isLate).length;
   $('#tabs [data-tab="board"]').innerHTML = "Board" + (lateCount ? `<span class="badge" title="${lateCount} slipped">${lateCount}</span>` : "");
   const root = $("#root");
+  if (ui.tab === "journal"){
+    if (document.activeElement?.closest?.("#jroot") || jPending.size) return;  // never clobber what you're typing
+    if (!root.querySelector("#jroot")) root.innerHTML = `<div class="loading">Loading journal…</div>`;
+    loadJournal().then(() => { if (ui.tab === "journal") { root.innerHTML = viewJournal(); } });
+    return;
+  }
   if (ui.tab === "board") root.innerHTML = viewBoard();
   else if (ui.tab === "pending") root.innerHTML = viewPending();
   else if (ui.tab === "backlog") root.innerHTML = viewBacklog();
   else if (ui.tab === "ledger") { root.innerHTML = `<div class="loading">Loading ledger…</div>`; viewLedger().then(h => { if (ui.tab === "ledger") root.innerHTML = h; }); }
-  else root.innerHTML = viewSettings();
+  else { root.innerHTML = viewSettings(); if (!J) loadJournal().then(() => { if (ui.tab === "settings") root.innerHTML = viewSettings(); }).catch(() => {}); }
   if (ui.tab === "board") wireBoard();
 }
 
@@ -702,6 +773,222 @@ function wireBoard(){
     });
   });
 }
+
+// ---------- journal (board only; nothing goes to Telegram)
+const RATE = [null, {e:"😣", l:"Awful"}, {e:"🙁", l:"Rough"}, {e:"😐", l:"Meh"}, {e:"🙂", l:"Good"}, {e:"🤩", l:"Great"}];
+const TRI = {focus:["Scattered","OK","Locked in"], energy:["Drained","OK","Charged"], area:["Rough","OK","Good"]};
+const TRI_C = ["var(--r1)", "var(--r3)", "var(--r5)"];
+const PROMPTS = ["What's on your mind?", "What happened today, in no particular order?", "What drained you? What gave you energy?",
+  "Anything you keep putting off? Why do you think that is?", "What would make tomorrow 10% better?", "Brain dump. No one else reads this."];
+let J = null;                       // {entries:{day:entry}, stats, areas, tags}
+const jPending = new Map();         // field -> value awaiting save
+let jTimer = null;
+ui.jday = null;
+async function loadJournal(){
+  const r = await api("GET", `/api/journal?to=${S.today}&from=${addDays(S.today, -370)}`);
+  J = {entries: Object.fromEntries(r.entries.map(e => [e.day, e])), stats: r.stats, areas: r.areas, tags: r.tags};
+}
+const jEntry = d => J.entries[d] || {day: d, rating: null, focus: null, energy: null, sleep: null, areas: {}, tags: [], win: "", derail: "", body: ""};
+const hasData = e => !!e && (e.rating || e.focus || e.energy || e.sleep != null || e.tags.length || Object.keys(e.areas).length || e.win || e.derail || e.body.trim());
+function jSet(field, value){
+  const d = ui.jday;
+  J.entries[d] = {...jEntry(d), [field]: value};
+  jPending.set(field, value);
+  jStatus("…");
+  clearTimeout(jTimer);
+  jTimer = setTimeout(jFlush, typeof value === "string" ? 900 : 150);
+}
+async function jFlush(){
+  clearTimeout(jTimer);
+  if (!jPending.size) return;
+  const d = ui.jday, body = Object.fromEntries(jPending); jPending.clear();
+  try { const e = await api("PATCH", `/api/journal/${d}`, body); J.entries[d] = {...e, ...Object.fromEntries(jPending)}; jStatus("Saved ✓", "ok"); }
+  catch (err){ for (const [k, v] of Object.entries(body)) if (!jPending.has(k)) jPending.set(k, v); jStatus("Not saved", "err"); toast(err.message, "err"); }
+}
+function jStatus(t, cls=""){ const el = $("#jsave"); if (el){ el.textContent = t; el.className = "jsave " + cls; } }
+window.addEventListener("beforeunload", e => { if (jPending.size){ jFlush(); e.preventDefault(); } });
+async function jGo(d){
+  if (!d || d > S.today) return;
+  await jFlush();
+  ui.jday = d; $("#root").innerHTML = viewJournal();
+}
+const rc = r => r ? `var(--r${r})` : "var(--cell-empty)";
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+
+function viewJournal(){
+  if (!ui.jday) ui.jday = S.today;
+  const d = ui.jday, e = jEntry(d), st = J.stats[d] || {done: [], spilled: 0};
+  const last30 = Array.from({length: 30}, (_, k) => addDays(S.today, -k));
+  const logged = last30.filter(x => hasData(J.entries[x])).length;
+  const tri = (field, val, labels, key) => `<div class="tri">${labels.map((l, k) =>
+      `<button type="button" data-j="${field}" ${key ? `data-key="${esc(key)}"` : ""} data-v="${k+1}" class="${val === k+1 ? "on" : ""}" style="--rc:${TRI_C[k]}">${l}</button>`).join("")}</div>`;
+  const allTags = [...J.tags, ...e.tags.filter(t => !J.tags.includes(t))];
+  const allAreas = [...J.areas, ...Object.keys(e.areas).filter(a => !J.areas.includes(a))];
+  const dayLabel = d === S.today ? "Today" : d === addDays(S.today, -1) ? "Yesterday" : fmt(d, {weekday:"long", day:"numeric", month:"long"});
+  const checkin = `<section class="panel" id="jcard">
+    <div class="jsec"><div class="k"><span>How was the day?</span>${e.rating ? `<a href="#" data-j-clear="rating" class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">clear</a>` : ""}</div>
+      <div class="rate">${[1,2,3,4,5].map(r => `<button type="button" data-j="rating" data-v="${r}" class="${e.rating === r ? "on" : ""}" style="--rc:${rc(r)}"><span>${RATE[r].e}</span>${RATE[r].l}</button>`).join("")}</div></div>
+    <div class="jsec">
+      <div class="jrow"><span class="muted">Focus</span>${tri("focus", e.focus, TRI.focus)}</div>
+      <div class="jrow"><span class="muted">Energy</span>${tri("energy", e.energy, TRI.energy)}</div>
+      <div class="jrow"><span class="muted">Sleep (hours)</span><input class="field" type="number" min="0" max="24" step="0.5" inputmode="decimal" data-j-in="sleep" value="${e.sleep ?? ""}" placeholder="e.g. 7" style="max-width:120px"></div>
+    </div>
+    <div class="jsec"><div class="k"><span>Life areas</span><span style="text-transform:none;letter-spacing:0;font-weight:400">tap again to unset</span></div>
+      ${allAreas.map(a => `<div class="jrow"><span class="muted">${esc(a)}</span>${tri("areas", e.areas[a] ?? null, TRI.area, a)}</div>`).join("")}</div>
+    <div class="jsec"><div class="k"><span>What happened</span></div>
+      <div class="jtags">${allTags.map(t => `<button type="button" data-jtag="${esc(t)}" class="${e.tags.includes(t) ? "on" : ""}">${esc(t)}</button>`).join("")}</div></div>
+  </section>`;
+  const prompt = PROMPTS[(D(d).getUTCDate()) % PROMPTS.length];
+  const write = `<section class="panel">
+    <div class="jsec"><label class="lbl">One win today, however small<input class="field" data-j-in="win" maxlength="500" value="${esc(e.win)}" placeholder="Did the dishes. Called mom. Shipped the PR."></label>
+      <label class="lbl">What derailed me<input class="field" data-j-in="derail" maxlength="500" value="${esc(e.derail)}" placeholder="Opened YouTube 'for a minute'…"></label></div>
+    <div class="jsec"><div class="k"><span>Journal</span><span id="jwords" style="text-transform:none;letter-spacing:0;font-weight:400">${wc(e.body)}</span></div>
+      <textarea class="field jbody" data-j-in="body" maxlength="100000" placeholder="${esc(prompt)}">${esc(e.body)}</textarea>
+      <span class="muted small">Saves as you type. Write as much or as little as you want.</span></div>
+    <div class="jsec"><div class="k"><span>From the board</span></div>
+      <div class="jboard">${st.done.length ? st.done.map(x => `<div>✓ <a href="#" data-open="${x.id}"><span class="cid">#${x.id}</span> ${esc(x.title)}</a></div>`).join("") : `<span class="muted">No tasks finished${d === S.today ? " yet" : ""}.</span>`}
+        ${st.spilled ? `<div style="color:var(--warn)">↻ ${st.spilled} spill${st.spilled > 1 ? "s" : ""}</div>` : ""}</div></div>
+  </section>`;
+  return `<div class="stack" id="jroot">
+    <section class="panel"><div class="panel-head">
+      <h2>${dayLabel}</h2>
+      <div class="jnav"><button class="btn sm" data-jgo="${addDays(d, -1)}" title="Previous day">‹</button>
+        <input class="field" type="date" id="jdate" value="${d}" max="${S.today}" style="padding:5px 9px">
+        <button class="btn sm" data-jgo="${addDays(d, 1)}" ${d >= S.today ? "disabled" : ""} title="Next day">›</button>
+        ${d !== S.today ? `<button class="btn sm" data-jgo="${S.today}">Today</button>` : ""}</div>
+      <span class="jsave" id="jsave"></span>
+      <div class="spacer"></div><span class="sub">Logged ${logged} of the last 30 days${logged >= 20 ? " 🔥" : ""}</span></div></section>
+    <div class="jgrid">${checkin}${write}</div>
+    ${journalPatterns()}
+    ${journalHistory()}
+  </div>`;
+}
+const wc = s => { const n = (s.trim().match(/\S+/g) || []).length; return n ? `${n} word${n > 1 ? "s" : ""}` : ""; };
+
+function journalPatterns(){
+  const days = Object.values(J.entries).filter(hasData);
+  // heatmap: last 26 weeks, Monday-first columns
+  const start = addDays(weekStart(S.today), -25 * 7);
+  let cells = "";
+  for (let k = 0; k < 26 * 7; k++){
+    const dd = addDays(start, k), en = J.entries[dd];
+    cells += `<i class="${dd > S.today ? "future" : ""} ${dd === ui.jday ? "sel" : ""} ${!en?.rating && hasData(en) ? "norate" : ""}" data-jgo="${dd}" data-tipday="${dd}" style="background:${en?.rating ? rc(en.rating) : "var(--cell-empty)"}"></i>`;
+  }
+  const legend = `<div class="legend">${[1,2,3,4,5].map(r => `<span><i style="--c:${rc(r)}"></i>${RATE[r].l}</span>`).join("")}<span><i class="norate" style="--c:var(--cell-empty)"></i>Logged, no rating</span><span><i style="--c:var(--cell-empty)"></i>Not logged</span></div>`;
+  const heat = `<section class="panel"><div class="panel-head"><h2>Your days</h2><span class="sub">Last 6 months. Click a day to open it.</span></div>
+    <div class="jsec"><div class="hm-wrap"><div class="hm-days"><span>M</span><span></span><span>W</span><span></span><span>F</span><span></span><span>S</span></div><div class="hm" id="hm">${cells}</div></div>${legend}</div></section>`;
+
+  // 30-day trend (rating only; focus/energy/sleep live in the tooltip, never a second axis)
+  const N = 30, W = 1000, H = 170, P = {l: 28, r: 10, t: 10, b: 22}, BH = 36;
+  const xs = k => P.l + (W - P.l - P.r) * (k / (N - 1));
+  const ys = v => P.t + (H - P.t - P.b) * (1 - (v - 1) / 4);
+  const td = Array.from({length: N}, (_, k) => addDays(S.today, k - N + 1));
+  let path = "", pen = false, dots = "";
+  td.forEach((dd, k) => { const r = J.entries[dd]?.rating;
+    if (r){ path += (pen ? "L" : "M") + xs(k).toFixed(1) + " " + ys(r).toFixed(1) + " "; pen = true;
+      dots += `<circle cx="${xs(k)}" cy="${ys(r)}" r="4" fill="${rc(r)}" stroke="var(--panel)" stroke-width="2"/>`; }
+    else pen = false; });
+  const maxDone = Math.max(1, ...td.map(dd => (J.stats[dd]?.done.length || 0)));
+  const bw = Math.max(4, (W - P.l - P.r) / N - 4);
+  const bars = td.map((dd, k) => { const n = J.stats[dd]?.done.length || 0; if (!n) return "";
+    const h = (BH - 6) * n / maxDone; return `<rect x="${xs(k) - bw/2}" y="${BH - h}" width="${bw}" height="${h}" rx="2" fill="var(--accent)" opacity=".75"/>`; }).join("");
+  const grid = [1,2,3,4,5].map(v => `<line x1="${P.l}" x2="${W - P.r}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--line)" ${v === 3 ? "" : 'stroke-dasharray="2 4"'}/><text x="${P.l - 8}" y="${ys(v) + 4}" text-anchor="end" font-size="10" fill="var(--faint)">${v}</text>`).join("");
+  const xl = [0, 7, 14, 21, 29].map(k => `<text x="${xs(k)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--faint)">${fmt(td[k], {day:"numeric", month:"short"})}</text>`).join("");
+  const rated = td.filter(dd => J.entries[dd]?.rating);
+  const trend = `<section class="panel"><div class="panel-head"><h2>Day rating, last 30 days</h2><span class="sub">${rated.length ? `avg ${avg(rated.map(dd => J.entries[dd].rating)).toFixed(1)} over ${rated.length} rated days` : "rate a few days to see the line"}</span></div>
+    <div class="jsec trend" id="trend" data-n="${N}">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Day rating over the last 30 days">${grid}${xl}
+        <path d="${path}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>${dots}
+        <line id="xh" x1="0" x2="0" y1="${P.t}" y2="${H - P.b}" stroke="var(--faint)" visibility="hidden"/>
+        <rect x="${P.l}" y="0" width="${W - P.l - P.r}" height="${H}" fill="transparent" id="trendHit" data-pl="${P.l}" data-pw="${W - P.l - P.r}" data-w="${W}" data-start="${td[0]}"/></svg>
+      <div class="muted small" style="margin-top:2px">Tasks done per day</div>
+      <svg viewBox="0 0 ${W} ${BH}" role="img" aria-label="Tasks done per day">${bars}<line x1="${P.l}" x2="${W - P.r}" y1="${BH}" y2="${BH}" stroke="var(--line)"/></svg>
+    </div></section>`;
+
+  // life areas, last 30 days: rough / ok / good split
+  const recent = days.filter(x => x.day > addDays(S.today, -30));
+  const areaRows = J.areas.map(a => { const v = recent.map(x => x.areas[a]).filter(Boolean); const c = [1,2,3].map(n => v.filter(x => x === n).length);
+    return {a, c, n: v.length, mean: avg(v)}; });
+  const areasHtml = areaRows.some(r => r.n) ? areaRows.map(r => `<div class="arow" data-tiparea="${esc(r.a)}" data-c="${r.c.join(",")}"><span>${esc(r.a)}</span>
+      ${r.n ? `<div class="seg3">${r.c.map((n, k) => n ? `<span style="flex:${n};background:${TRI_C[k]}"></span>` : "").join("")}</div>` : `<div class="seg3"></div>`}
+      <span class="num">${r.n ? r.n + "d" : "–"}</span></div>`).join("")
+      + `<div class="legend" style="margin-top:6px">${TRI.area.map((l, k) => `<span><i style="--c:${TRI_C[k]}"></i>${l}</span>`).join("")}</div>`
+    : `<span class="muted small">Tap rough / OK / good for each area in today's check-in and this fills in.</span>`;
+
+  // what goes with good days
+  const rd = days.filter(x => x.rating);
+  let ins = "";
+  if (rd.length >= 5){
+    const base = avg(rd.map(x => x.rating));
+    const rows = [];
+    const tagSet = new Set(rd.flatMap(x => x.tags));
+    for (const t of tagSet){
+      const w = rd.filter(x => x.tags.includes(t)), wo = rd.filter(x => !x.tags.includes(t));
+      if (w.length >= 3 && wo.length >= 2) rows.push({label: t, n: w.length, d: avg(w.map(x => x.rating)) - avg(wo.map(x => x.rating))});
+    }
+    const sl = rd.filter(x => x.sleep != null);
+    const good = sl.filter(x => x.sleep >= 7), bad = sl.filter(x => x.sleep < 7);
+    if (good.length >= 3 && bad.length >= 3) rows.push({label: "slept 7h+", n: good.length, d: avg(good.map(x => x.rating)) - avg(bad.map(x => x.rating))});
+    rows.sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
+    ins = rows.length ? `<div class="muted small">Average day rating with vs. without each thing. Your overall average is ${base.toFixed(1)}. Patterns, not proof.</div>`
+      + rows.slice(0, 12).map(r => { const w = Math.min(50, Math.abs(r.d) / 2 * 50);
+        return `<div class="irow"><span>${esc(r.label)} <span class="muted small">· ${r.n} days</span></span>
+          <div class="bar2"><span style="${r.d >= 0 ? `left:50%;width:${w}%;background:var(--r5)` : `right:50%;width:${w}%;background:var(--r1)`}"></span></div>
+          <span class="num" style="color:var(--text)">${r.d >= 0 ? "+" : "−"}${Math.abs(r.d).toFixed(1)}</span></div>`; }).join("")
+      : `<span class="muted small">Not enough overlap yet. A tag needs at least 3 rated days with it and 2 without.</span>`;
+  } else ins = `<span class="muted small">Rate ${5 - rd.length} more day${5 - rd.length === 1 ? "" : "s"} and this starts showing which habits go with good and bad days.</span>`;
+
+  return `${heat}${trend}<div class="split">
+    <section class="panel"><div class="panel-head"><h2>Life areas</h2><span class="sub">Last 30 days</span></div><div class="jsec">${areasHtml}</div></section>
+    <section class="panel"><div class="panel-head"><h2>What goes with good days</h2></div><div class="jsec">${ins}</div></section></div>`;
+}
+
+function journalHistory(){
+  const q = ui.q.toLowerCase();
+  const list = Object.values(J.entries).filter(hasData).filter(e => !q ||
+    [e.body, e.win, e.derail, ...e.tags].some(x => x.toLowerCase().includes(q))).sort((a, b) => b.day.localeCompare(a.day));
+  return `<section class="panel"><div class="panel-head"><h2>Entries</h2><span class="sub">${list.length}${q ? ` matching “${esc(ui.q)}”` : ""}</span></div>
+    <ul class="rows">${list.length ? list.slice(0, 120).map(e => `<li class="hrow" data-jgo="${e.day}">
+      <span class="d">${fmt(e.day, {weekday:"short", day:"numeric", month:"short"})}</span>
+      <span class="r" style="background:${rc(e.rating)}">${e.rating ? RATE[e.rating].e : "·"}</span>
+      <div style="min-width:0"><div class="snip">${esc(e.win ? "★ " + e.win + (e.body ? " · " : "") : "")}${esc(e.body.slice(0, 280)) || (e.win ? "" : '<span class="muted">No writing</span>')}</div>
+        ${e.tags.length ? `<div class="tg">${e.tags.map(t => `<span>${esc(t)}</span>`).join("")}</div>` : ""}</div></li>`).join("")
+      : `<li class="empty" style="margin:12px">${q ? "No entries match." : "No entries yet. Today's a good day to start."}</li>`}</ul></section>`;
+}
+
+// tooltips for heatmap, trend and areas
+function showTip(html, ev){ const t = $("#tip"); t.innerHTML = html; t.style.display = "block";
+  const x = Math.min(ev.clientX + 14, innerWidth - t.offsetWidth - 8), y = ev.clientY + 16 + t.offsetHeight > innerHeight ? ev.clientY - t.offsetHeight - 10 : ev.clientY + 16;
+  t.style.left = x + "px"; t.style.top = y + "px"; }
+function hideTip(){ $("#tip").style.display = "none"; const xh = $("#xh"); if (xh) xh.setAttribute("visibility", "hidden"); }
+function dayTip(dd){
+  const e = J.entries[dd], st = J.stats[dd];
+  const bits = [];
+  if (e?.focus) bits.push(`focus ${TRI.focus[e.focus - 1].toLowerCase()}`);
+  if (e?.energy) bits.push(`energy ${TRI.energy[e.energy - 1].toLowerCase()}`);
+  if (e?.sleep != null) bits.push(`${e.sleep}h sleep`);
+  if (st?.done.length) bits.push(`${st.done.length} task${st.done.length > 1 ? "s" : ""} done`);
+  return `<b>${fmt(dd, {weekday:"short", day:"numeric", month:"short"})}</b> · ${e?.rating ? `${RATE[e.rating].e} ${RATE[e.rating].l}` : hasData(e) ? "no rating" : '<span class="muted">not logged</span>'}
+    ${bits.length ? `<div class="muted">${bits.join(" · ")}</div>` : ""}${e?.win ? `<div style="margin-top:4px">★ ${esc(e.win)}</div>` : ""}`;
+}
+document.addEventListener("mousemove", ev => {
+  if (ui.tab !== "journal" || !J) return;
+  const c = ev.target.closest?.("[data-tipday]");
+  if (c) return showTip(dayTip(c.dataset.tipday), ev);
+  const a = ev.target.closest?.("[data-tiparea]");
+  if (a){ const c3 = a.dataset.c.split(",").map(Number); return showTip(`<b>${esc(a.dataset.tiparea)}</b><div class="muted">${TRI.area.map((l, k) => `${l} ${c3[k]}`).join(" · ")}</div>`, ev); }
+  if (ev.target.id === "trendHit"){
+    const hit = ev.target, svg = hit.ownerSVGElement, r = svg.getBoundingClientRect();
+    const sx = (ev.clientX - r.left) * (+hit.dataset.w / r.width);
+    const n = +$("#trend").dataset.n, k = Math.max(0, Math.min(n - 1, Math.round((sx - +hit.dataset.pl) / +hit.dataset.pw * (n - 1))));
+    const x = +hit.dataset.pl + +hit.dataset.pw * k / (n - 1);
+    const xh = $("#xh"); xh.setAttribute("x1", x); xh.setAttribute("x2", x); xh.setAttribute("visibility", "visible");
+    return showTip(dayTip(addDays(hit.dataset.start, k)), ev);
+  }
+  hideTip();
+});
+
+window.addEventListener("scroll", () => { if ($("#tip").style.display === "block") hideTip(); }, {passive: true});
 
 // ---------- pending view: everything still open, grouped by the week it's aimed at
 const weekStart = s => addDays(s, -((D(s).getUTCDay() + 6) % 7));   // Monday
@@ -934,6 +1221,11 @@ function viewSettings(){
           <div style="display:flex;gap:8px"><input class="field" name="times" value="${esc(st.alert_times.join(", "))}" placeholder="09:00, 21:00"><button class="btn sm" type="submit">Save</button></div></label>
           <span class="muted small">First time = morning plan. Last time = evening check. Any in between = check-ins.</span></form>
       </div></section>
+      <section class="panel"><div class="panel-head"><h2>Journal</h2><span class="sub">Only on this board. Never sent to Telegram.</span></div>
+        <form class="set-body" id="journalSet">
+          <label class="lbl">Life areas (comma separated)<textarea class="field" name="areas" style="min-height:60px">${esc((J?.areas || []).join(", "))}</textarea></label>
+          <label class="lbl">Tags (comma separated)<textarea class="field" name="tags" style="min-height:90px">${esc((J?.tags || []).join(", "))}</textarea></label>
+          <div><button class="btn sm" type="submit">Save</button> <span class="muted small">Removing one doesn't touch past entries.</span></div></form></section>
       <section class="panel"><div class="panel-head"><h2>House rules</h2><span class="sub">Enforced by the server, not just this page.</span></div>
         <div class="set-body"><ul class="rules">
           <li><b>Moving a deadline later is a spill.</b> It needs a reason and gets counted.</li>
@@ -946,7 +1238,7 @@ function viewSettings(){
       <section class="panel"><div class="panel-head"><h2>Session</h2></div><div class="set-body">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="muted small">Signed in on this device for 30 days.</span><div class="spacer"></div><button class="btn sm danger" data-act="logout">Sign out</button></div></div></section>
       <section class="panel"><div class="panel-head"><h2>Keyboard</h2></div><div class="set-body small muted">
-        <span><span class="kbd">N</span> new item · <span class="kbd">/</span> search · <span class="kbd">1</span>–<span class="kbd">5</span> tabs · <span class="kbd">Esc</span> close</span></div></section>
+        <span><span class="kbd">N</span> new item · <span class="kbd">/</span> search · <span class="kbd">1</span>–<span class="kbd">6</span> tabs · <span class="kbd">Esc</span> close</span></div></section>
     </div></div>`;
 }
 
@@ -1146,7 +1438,20 @@ $("#closeForm").addEventListener("submit", async e => {
 // ---------- global events
 document.addEventListener("click", async e => {
   const t = e.target;
-  const tab = t.closest("#tabs button"); if (tab){ ui.tab = tab.dataset.tab; store.set("tab", ui.tab); render(); return; }
+  const jb = t.closest("[data-j]");
+  if (jb){ const f = jb.dataset.j, v = +jb.dataset.v, e = jEntry(ui.jday);
+    if (f === "areas"){ const k = jb.dataset.key, ar = {...e.areas}; ar[k] === v ? delete ar[k] : ar[k] = v; jSet("areas", ar); }
+    else jSet(f, e[f] === v && f !== "rating" ? null : v);
+    $$(`[data-j="${f}"]${jb.dataset.key ? `[data-key="${CSS.escape(jb.dataset.key)}"]` : ""}`).forEach(b => b.classList.toggle("on", f === "areas" ? jEntry(ui.jday).areas[b.dataset.key] === +b.dataset.v : jEntry(ui.jday)[f] === +b.dataset.v));
+    if (f === "rating"){ const c = $(`#hm [data-tipday="${ui.jday}"]`); if (c){ c.style.background = rc(jEntry(ui.jday).rating); c.classList.remove("norate"); } }
+    if (f === "rating") $("#jcard .jsec .k").innerHTML = `<span>How was the day?</span><a href="#" data-j-clear="rating" class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">clear</a>`;
+    return; }
+  const jc = t.closest("[data-j-clear]"); if (jc){ e.preventDefault(); jSet(jc.dataset.jClear, null); $$(`[data-j="${jc.dataset.jClear}"]`).forEach(b => b.classList.remove("on")); jc.remove(); return; }
+  const jt = t.closest("[data-jtag]");
+  if (jt){ const tg = jt.dataset.jtag, cur = jEntry(ui.jday).tags; const next = cur.includes(tg) ? cur.filter(x => x !== tg) : [...cur, tg];
+    jSet("tags", next); jt.classList.toggle("on", next.includes(tg)); return; }
+  const jg = t.closest("[data-jgo]"); if (jg && !jg.disabled){ hideTip(); await jGo(jg.dataset.jgo); window.scrollTo({top: 0, behavior: "smooth"}); return; }
+  const tab = t.closest("#tabs button"); if (tab){ if (ui.tab === "journal") await jFlush(); ui.tab = tab.dataset.tab; store.set("tab", ui.tab); render(); return; }
   const sp = t.closest("[data-spill]"); if (sp){ e.stopPropagation(); openSpill(+sp.dataset.spill); return; }
   const op = !t.closest("[data-noopen]") && t.closest("[data-open]"); if (op){ e.preventDefault(); openDrawer(+op.dataset.open); return; }
   const c = t.closest(".card"); if (c){ openDrawer(+c.dataset.id); return; }
@@ -1171,6 +1476,7 @@ document.addEventListener("click", async e => {
 document.addEventListener("change", async e => {
   const t = e.target;
   if (t.id === "sprintPick"){ ui.sprintId = +t.value; render(); }
+  else if (t.id === "jdate"){ await jGo(t.value); }
   else if (t.dataset.sel){ const id = +t.dataset.sel; t.checked ? ui.sel.add(id) : ui.sel.delete(id); render(); }
   else if (t.id === "hideRunning"){ ui.hideRunning = t.checked; store.set("hideRunning", t.checked); render(); }
   else if (t.dataset.planRow && t.value){ await planInto([+t.dataset.planRow], t.value); }
@@ -1194,6 +1500,10 @@ document.addEventListener("submit", async e => {
     const title = f.title.value.trim(); if (!title) return;
     const r = await act(() => api("POST", "/api/items", {title, area_id: f.area_id.value ? +f.area_id.value : null}), "Added to backlog");
     if (r) $("#quickAdd [name=title]")?.focus();
+  } else if (f.id === "journalSet"){
+    e.preventDefault();
+    try { const r = await api("PATCH", "/api/journal-settings", {areas: f.areas.value, tags: f.tags.value}); if (J){ J.areas = r.areas; J.tags = r.tags; } toast("Journal settings saved"); render(); }
+    catch (err){ toast(err.message, "err"); }
   } else if (f.id === "areaAdd"){
     e.preventDefault();
     await act(() => api("POST", "/api/areas", {name: f.name.value, color: f.color.value}), "Area added");
@@ -1202,15 +1512,23 @@ document.addEventListener("submit", async e => {
     await act(() => api("PATCH", "/api/settings", {alert_times: f.times.value}), "Alert times saved");
   }
 });
+document.addEventListener("input", e => {
+  const f = e.target.dataset?.jIn; if (!f) return;
+  if (f === "sleep"){ const v = e.target.value; if (v === "" || (+v >= 0 && +v <= 24)) jSet("sleep", v === "" ? null : +v); return; }
+  jSet(f, e.target.value);
+  if (f === "body"){ const w = $("#jwords"); if (w) w.textContent = wc(e.target.value); }
+});
+document.addEventListener("focusout", e => { if (e.target.dataset?.jIn) jFlush(); });
 $("#newBtn").onclick = () => openDrawer("new");
-$("#q").addEventListener("input", e => { ui.q = e.target.value.trim(); if (["board","pending","backlog"].includes(ui.tab)) render(); });
+$("#q").addEventListener("input", e => { ui.q = e.target.value.trim(); if (["board","pending","backlog"].includes(ui.tab)) render();
+  else if (ui.tab === "journal" && J){ const h = $("#jroot > section:last-child"); if (h) h.outerHTML = journalHistory(); } });
 document.addEventListener("keydown", e => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.querySelector("dialog[open]");
   if (e.key === "Escape" && editing && !document.querySelector("dialog[open]")){ closeDrawer(); return; }
   if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "n" || e.key === "N"){ e.preventDefault(); openDrawer("new"); }
   else if (e.key === "/"){ e.preventDefault(); $("#q").focus(); }
-  else if ("12345".includes(e.key) && e.key.length === 1){ ui.tab = ["board","pending","backlog","ledger","settings"][+e.key - 1]; store.set("tab", ui.tab); render(); }
+  else if ("123456".includes(e.key) && e.key.length === 1){ ui.tab = ["board","pending","journal","backlog","ledger","settings"][+e.key - 1]; store.set("tab", ui.tab); render(); }
   else if (e.key === "Enter" && document.activeElement?.classList.contains("card")){ openDrawer(+document.activeElement.dataset.id); }
 });
 

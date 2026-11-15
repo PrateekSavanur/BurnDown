@@ -57,6 +57,10 @@ OPEN_STATES = ("todo", "doing", "blocked")
 EDITABLE_STATES = OPEN_STATES + ("done",)
 CATEGORIES = ("underestimated", "blocked", "low-energy", "priority-shift", "forgot", "external", "other")
 SPRINT_DAYS = 14
+DEFAULT_JOURNAL_AREAS = ["Work & study", "Health & body", "People", "Home & chores", "Fun & hobbies", "Mind & mood"]
+DEFAULT_JOURNAL_TAGS = ["exercised", "outdoors", "slept badly", "late night", "meds taken", "skipped meals", "ate well",
+                        "doom-scrolled", "hyperfocused", "procrastinated", "overwhelmed", "anxious", "family time",
+                        "friends", "alone time", "argued", "chores done", "creative", "learned something"]
 SEED_AREAS = [("CKA", "#326ce5"), ("Homelab", "#22c55e"), ("Singing", "#e0569b"),
               ("Career", "#f59e0b"), ("Work", "#8b5cf6")]
 
@@ -135,6 +139,20 @@ CREATE TABLE IF NOT EXISTS events(
 );
 CREATE INDEX IF NOT EXISTS events_item ON events(item_id);
 CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS journal(
+  day TEXT PRIMARY KEY,
+  rating INTEGER,
+  focus INTEGER,
+  energy INTEGER,
+  sleep REAL,
+  areas TEXT NOT NULL DEFAULT '{}',
+  tags TEXT NOT NULL DEFAULT '[]',
+  win TEXT NOT NULL DEFAULT '',
+  derail TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 """
 
 
@@ -971,6 +989,152 @@ def r_tg_test(body, qs):
         BOT.send(build_digest(body.get("kind") or "check"))
     except RuntimeError as e:
         raise ApiError(502, str(e))
+
+
+# -------------------------------------------------------------------- journal
+# Lives only on the board: nothing here is sent to Telegram.
+
+def journal_list(key, default):
+    try:
+        v = json.loads(db.get_setting(key) or "null")
+        if isinstance(v, list) and all(isinstance(x, str) for x in v):
+            return v
+    except ValueError:
+        pass
+    return list(default)
+
+
+def clean_names(raw, field, limit):
+    if isinstance(raw, str):
+        raw = raw.split(",")
+    if not isinstance(raw, list):
+        raise ApiError(400, f"{field} must be a list")
+    out = []
+    for x in raw:
+        x = str(x).strip()[:40]
+        if x and x not in out:
+            out.append(x)
+    if len(out) > limit:
+        raise ApiError(400, f"At most {limit} {field}")
+    return out
+
+
+def journal_row(r):
+    r = dict(r)
+    r["areas"] = json.loads(r["areas"] or "{}")
+    r["tags"] = json.loads(r["tags"] or "[]")
+    return r
+
+
+def get_journal(qs):
+    t = today()
+    end = parse_date(qs.get("to", [None])[0]) or t
+    start = parse_date(qs.get("from", [None])[0]) or end - timedelta(days=370)
+    if (end - start).days > 1200:
+        raise ApiError(400, "Range too large")
+    a, b = start.isoformat(), end.isoformat()
+    entries = [journal_row(r) for r in db.q("SELECT * FROM journal WHERE day BETWEEN ? AND ? ORDER BY day", (a, b))]
+    stats = {}
+    for e in db.q("SELECT substr(e.ts,1,10) AS day, e.kind, e.to_val, e.item_id, i.title FROM events e "
+                  "LEFT JOIN items i ON i.id=e.item_id WHERE substr(e.ts,1,10) BETWEEN ? AND ? "
+                  "AND (e.kind='spilled' OR (e.kind='moved' AND e.to_val='done'))", (a, b)):
+        d = stats.setdefault(e["day"], {"done": [], "spilled": 0})
+        if e["kind"] == "spilled":
+            d["spilled"] += 1
+        elif not any(x["id"] == e["item_id"] for x in d["done"]):
+            d["done"].append({"id": e["item_id"], "title": e["title"] or "(deleted)"})
+    return {"entries": entries, "stats": stats, "from": a, "to": b,
+            "areas": journal_list("journal_areas", DEFAULT_JOURNAL_AREAS),
+            "tags": journal_list("journal_tags", DEFAULT_JOURNAL_TAGS)}
+
+
+def _scale(v, lo, hi, field):
+    if v in (None, ""):
+        return None
+    try:
+        v = int(v)
+    except (TypeError, ValueError):
+        raise ApiError(400, f"{field} must be {lo}–{hi}")
+    if not lo <= v <= hi:
+        raise ApiError(400, f"{field} must be {lo}–{hi}")
+    return v
+
+
+def save_journal(day: date, data):
+    if day > today():
+        raise ApiError(400, "Can't journal a day that hasn't happened yet")
+    sets = {}
+    if "rating" in data:
+        sets["rating"] = _scale(data["rating"], 1, 5, "Day rating")
+    if "focus" in data:
+        sets["focus"] = _scale(data["focus"], 1, 3, "Focus")
+    if "energy" in data:
+        sets["energy"] = _scale(data["energy"], 1, 3, "Energy")
+    if "sleep" in data:
+        v = data["sleep"]
+        if v in (None, ""):
+            sets["sleep"] = None
+        else:
+            try:
+                v = round(float(v), 1)
+            except (TypeError, ValueError):
+                raise ApiError(400, "Sleep must be hours, like 7 or 6.5")
+            if not 0 <= v <= 24:
+                raise ApiError(400, "Sleep must be between 0 and 24 hours")
+            sets["sleep"] = v
+    if "areas" in data:
+        raw = data["areas"]
+        if not isinstance(raw, dict):
+            raise ApiError(400, "areas must be an object")
+        sets["areas"] = json.dumps({str(k)[:40]: _scale(v, 1, 3, str(k)) for k, v in list(raw.items())[:30]
+                                    if v not in (None, "")})
+    if "tags" in data:
+        sets["tags"] = json.dumps(clean_names(data["tags"], "tags", 60))
+    for f, cap in (("win", 500), ("derail", 500), ("body", 100_000)):
+        if f in data:
+            v = str(data[f] or "")
+            v = v.strip() if f != "body" else v.rstrip()
+            if len(v) > cap:
+                raise ApiError(400, f"{f} is too long")
+            sets[f] = v
+    d = day.isoformat()
+    ts = now_iso()
+    with db.tx():
+        if not db.one("SELECT day FROM journal WHERE day=?", (d,)):
+            db.x("INSERT INTO journal(day, created_at, updated_at) VALUES(?,?,?)", (d, ts, ts))
+        if sets:
+            sets["updated_at"] = ts
+            db.x(f"UPDATE journal SET {', '.join(f'{k}=?' for k in sets)} WHERE day=?", (*sets.values(), d))
+    return journal_row(db.one("SELECT * FROM journal WHERE day=?", (d,)))
+
+
+@route("GET", "/api/journal")
+def r_journal(body, qs):
+    return get_journal(qs)
+
+
+@route("PATCH", r"/api/journal/(\d{4})-(\d{2})-(\d{2})")
+def r_journal_save(y, m, d, body, qs):
+    try:
+        day = date(y, m, d)
+    except ValueError:
+        raise ApiError(400, "Invalid date")
+    return save_journal(day, body)
+
+
+@route("DELETE", r"/api/journal/(\d{4})-(\d{2})-(\d{2})")
+def r_journal_delete(y, m, d, body, qs):
+    db.x("DELETE FROM journal WHERE day=?", (f"{y:04d}-{m:02d}-{d:02d}",))
+
+
+@route("PATCH", "/api/journal-settings")
+def r_journal_settings(body, qs):
+    if "areas" in body:
+        db.set_setting("journal_areas", json.dumps(clean_names(body["areas"], "areas", 12)))
+    if "tags" in body:
+        db.set_setting("journal_tags", json.dumps(clean_names(body["tags"], "tags", 60)))
+    return {"areas": journal_list("journal_areas", DEFAULT_JOURNAL_AREAS),
+            "tags": journal_list("journal_tags", DEFAULT_JOURNAL_TAGS)}
 
 
 # ------------------------------------------------------------------- sessions
