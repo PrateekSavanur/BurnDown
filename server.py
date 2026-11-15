@@ -118,6 +118,8 @@ CREATE TABLE IF NOT EXISTS items(
   priority INTEGER NOT NULL DEFAULT 2,
   due_date TEXT,
   target_date TEXT,
+  estimate_hours REAL,
+  spent_hours REAL,
   evidence TEXT NOT NULL DEFAULT '',
   spill_count INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
@@ -169,6 +171,9 @@ class DB:
             cols = {r[1] for r in self.conn.execute("PRAGMA table_info(items)")}
             if "target_date" not in cols:  # soft "aim for the week of", not a deadline
                 self.conn.execute("ALTER TABLE items ADD COLUMN target_date TEXT")
+            for c in ("estimate_hours", "spent_hours"):
+                if c not in cols:
+                    self.conn.execute(f"ALTER TABLE items ADD COLUMN {c} REAL")
         if not self.get_setting("seeded"):
             with self.tx():
                 for name, color in SEED_AREAS:
@@ -293,6 +298,18 @@ def check_priority(p):
     return p
 
 
+def check_hours(v, field):
+    if v in (None, ""):
+        return None
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        raise ApiError(400, f"{field} must be a number of hours, like 1.5")
+    if not 0 <= v <= 500:
+        raise ApiError(400, f"{field} must be between 0 and 500 hours")
+    return round(v * 4) / 4  # quarter hours
+
+
 def create_item(data, source="board"):
     title = str(data.get("title") or "").strip()
     if not title:
@@ -307,10 +324,11 @@ def create_item(data, source="board"):
     with db.tx():
         item_id = db.x(
             "INSERT INTO items(title, description, area_id, sprint_id, state, priority, due_date, target_date, "
-            "evidence, created_at, updated_at, done_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+            "estimate_hours, spent_hours, evidence, created_at, updated_at, done_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (title, str(data.get("description") or "").strip(), check_area(data.get("area_id")),
              sprint_id, state, check_priority(data.get("priority", 2)),
              due.isoformat() if due else None, target.isoformat() if target else None,
+             check_hours(data.get("estimate_hours"), "Estimate"), check_hours(data.get("spent_hours"), "Hours spent"),
              str(data.get("evidence") or "").strip(),
              ts, ts, ts if state == "done" else None))
         log_event(item_id, "created", sprint_id=sprint_id, to_val=sprint_label(sprint_id), source=source)
@@ -351,6 +369,12 @@ def update_item(item_id, data, source="board"):
                 raise ApiError(409, "Postponing a deadline is a spill. Use “Spill” and write the reason.")
             sets["due_date"] = new.isoformat() if new else None
             edited.append("due date")
+    for f, label, tag in (("estimate_hours", "Estimate", "estimate"), ("spent_hours", "Hours spent", "hours spent")):
+        if f in data:
+            v = check_hours(data[f], label)
+            if v != it[f]:
+                sets[f] = v
+                edited.append(tag)
     if "target_date" in data:  # soft plan, never a spill
         new = parse_date(data["target_date"], "target week")
         if (new.isoformat() if new else None) != it["target_date"]:

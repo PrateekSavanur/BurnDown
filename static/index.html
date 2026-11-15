@@ -168,6 +168,10 @@ button{cursor:pointer}
 .cmeta .due.soon{color:var(--info)}
 .cmeta .spills{color:var(--warn)}
 .cmeta .ev{color:var(--ok)}
+.cmeta .hrs.over{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.hbtns{display:flex;gap:4px;flex-wrap:wrap}
+.hbtns button{border:1px solid var(--line);background:var(--panel-2);border-radius:7px;padding:2px 8px;font-size:12px;color:var(--muted)}
+.hbtns button:hover{border-color:var(--accent);color:var(--text)}
 .reason-btn{margin-top:9px;width:100%;border:1px solid color-mix(in srgb,var(--danger) 45%,transparent);background:var(--danger-soft);color:var(--danger);border-radius:8px;padding:5px 8px;font-size:12px;font-weight:600}
 .reason-btn:hover{background:color-mix(in srgb,var(--danger) 20%,transparent)}
 .welcome{grid-column:1/-1;text-align:center;padding:70px 20px;border:1px dashed var(--line-2);border-radius:18px;background:color-mix(in srgb,var(--panel) 60%,transparent)}
@@ -433,6 +437,9 @@ dialog::backdrop{background:rgba(5,6,10,.55);backdrop-filter:blur(3px)}
       <label class="lbl">Priority<select class="field" name="priority"><option value="1">P1: must happen</option><option value="2">P2: should happen</option><option value="3">P3: nice to have</option></select></label>
       <label class="lbl">Due date<input class="field" type="date" name="due_date"></label>
       <label class="lbl" title="A soft plan, not a deadline. Changing it is never a spill.">Aim for week of<input class="field" type="date" name="target_date"></label>
+      <label class="lbl">Estimate (hours)<input class="field" type="number" name="estimate_hours" min="0" max="500" step="0.25" inputmode="decimal" placeholder="How long will it take?"></label>
+      <div class="lbl">Hours spent<input class="field" type="number" name="spent_hours" min="0" max="500" step="0.25" inputmode="decimal" placeholder="0">
+        <div class="hbtns" id="hbtns"><button type="button" data-addh="0.25">+15m</button><button type="button" data-addh="0.5">+30m</button><button type="button" data-addh="1">+1h</button><button type="button" data-addh="2">+2h</button></div></div>
     </div>
     <label class="lbl">Definition of done<textarea class="field" name="description" placeholder="What does finished look like? Be specific."></textarea></label>
     <label class="lbl">Evidence<input class="field" name="evidence" placeholder="Commit link, lab score, recording, screenshot…"></label>
@@ -568,6 +575,8 @@ function effDue(i){
   const sp = i.sprint_id && sprintById(i.sprint_id);
   return sp ? sp.end_date : null;
 }
+const hrs = h => h == null ? "" : (h % 1 ? h.toFixed(2).replace(/0$/, "") : String(h)) + "h";
+const sumH = (list, f) => list.reduce((t, i) => t + (i[f] || 0), 0);
 const isLate = i => isOpen(i) && !!effDue(i) && effDue(i) < S.today;
 function dueInfo(i){
   const d = effDue(i); if (!d) return null;
@@ -666,6 +675,13 @@ function viewBoard(){
   return sprintHeader(sp, all) + strip + filters(shown.length, all.length) + `<div class="board" id="board">${cols}</div>`;
 }
 
+function accuracy(items){         // estimate vs reality for finished work
+  const both = items.filter(i => i.state === "done" && i.estimate_hours > 0 && i.spent_hours > 0);
+  if (!both.length) return null;
+  const est = sumH(both, "estimate_hours"), spent = sumH(both, "spent_hours"), ratio = spent / est;
+  const label = Math.abs(ratio - 1) < 0.1 ? "estimates on point" : ratio > 1 ? `tasks take ${ratio.toFixed(1)}× your estimate` : `tasks take ${Math.round(ratio * 100)}% of your estimate`;
+  return {n: both.length, est, spent, ratio, label};
+}
 function sprintHeader(sp, items){
   const status = sprintStatus(sp);
   const len = diff(sp.end_date, sp.start_date) + 1;
@@ -681,6 +697,8 @@ function sprintHeader(sp, items){
   if (status === "ended") pills.push(`<span class="pill warn">Ended, not closed</span>`);
   if (status === "closed") pills.push(`<span class="pill ok">Closed ${fmt(sp.closed_at)}</span>`);
   if (sp.spills) pills.push(`<span class="pill warn">↻ ${sp.spills} spill${sp.spills>1?"s":""}</span>`);
+  const acc = accuracy(items);
+  if (acc) pills.push(`<span class="pill ${acc.ratio > 1.25 ? "warn" : acc.ratio < 0.8 ? "" : "ok"}" title="${acc.n} finished items with both an estimate and hours spent: estimated ${hrs(acc.est)}, took ${hrs(acc.spent)}">⏱ ${acc.label}</span>`);
   if (sp.mid_check && status !== "closed") pills.push(`<span class="pill" title="Mid-sprint check">🧭 ${fmt(sp.mid_check, {weekday:"short", day:"numeric", month:"short"})}</span>`);
   const options = S.sprints.map(s => `<option value="${s.id}" ${s.id === sp.id ? "selected" : ""}>${esc(s.name)} · ${sprintStatus(s)}</option>`).join("");
   return `<section class="sprint">
@@ -697,7 +715,8 @@ function sprintHeader(sp, items){
           stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct/100)}" style="transition:stroke-dashoffset .6s"/>
         <defs><linearGradient id="rg"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-2)"/></linearGradient></defs>
       </svg><div class="pct">${pct}%</div></div>
-      <div class="ring-stats"><span><b>${done}</b> / ${total} done</span><span><b>${total - done}</b> remaining</span><span><b>${items.filter(isLate).length}</b> slipped</span></div>
+      <div class="ring-stats"><span><b>${done}</b> / ${total} done</span><span><b>${total - done}</b> remaining</span><span><b>${items.filter(isLate).length}</b> slipped</span>
+        ${items.some(i => i.estimate_hours != null) ? `<span title="Estimated hours still open / estimated in total"><b>${hrs(sumH(items.filter(isOpen), "estimate_hours")) || "0h"}</b> left of ${hrs(sumH(items, "estimate_hours"))}</span>` : ""}</div>
     </div>
     <div class="burn">${burndown(sp, items)}</div>
     <div class="s-actions">
@@ -741,12 +760,20 @@ function filters(shown, total){
     <span class="count">${shown === total ? total + " items" : `${shown} of ${total} items`}</span></div>`;
 }
 
+function hoursChip(i){
+  const e = i.estimate_hours, sp = i.spent_hours;
+  if (e == null && !sp) return "";
+  const over = e != null && sp > e;
+  const text = sp ? (e != null ? `${hrs(sp)} / ${hrs(e)}` : `${hrs(sp)} spent`) : hrs(e);
+  const title = `Estimate: ${e != null ? hrs(e) : "none"} · Spent: ${sp ? hrs(sp) : "0h"}${over ? " · over estimate" : ""}`;
+  return `<span class="hrs ${over ? "over" : ""}" title="${title}">⏱ ${text}</span>`;
+}
 function card(i){
   const a = areaById(i.area_id), due = dueInfo(i), late = isLate(i);
   return `<article class="card ${i.state} ${late ? "late" : ""}" draggable="true" data-id="${i.id}" tabindex="0" style="--area:${a ? a.color : "var(--line-2)"}">
     <div class="card-top"><span class="cid">#${i.id}</span>${a ? `<span class="tag">${esc(a.name)}</span>` : ""}<span class="prio p${i.priority}">P${i.priority}</span></div>
     <div class="ctitle">${esc(i.title)}</div>
-    <div class="cmeta">${due ? `<span class="due ${due.cls}" title="${esc(due.title)}">${esc(due.text)}</span>` : ""}${i.spill_count ? `<span class="spills" title="Spilled ${i.spill_count}×">↻ ${i.spill_count}</span>` : ""}${i.evidence ? `<span class="ev" title="${esc(i.evidence)}">◆ evidence</span>` : ""}</div>
+    <div class="cmeta">${due ? `<span class="due ${due.cls}" title="${esc(due.title)}">${esc(due.text)}</span>` : ""}${i.spill_count ? `<span class="spills" title="Spilled ${i.spill_count}×">↻ ${i.spill_count}</span>` : ""}${hoursChip(i)}${i.evidence ? `<span class="ev" title="${esc(i.evidence)}">◆ evidence</span>` : ""}</div>
     ${late ? `<button class="reason-btn" data-spill="${i.id}">Slipped · give a reason</button>` : ""}
   </article>`;
 }
@@ -1052,6 +1079,7 @@ function viewPending(){
       due ? `<span class="${due.cls === "late" ? "late" : ""}" title="${esc(due.title)}">due ${esc(due.text)}</span>` : "",
       !i.due_date && i.target_date ? `<span title="Soft plan">aim: wk of ${fmt(i.target_date, {day:"numeric", month:"short"})}</span>` : "",
       i.spill_count ? `<span style="color:var(--warn)">↻ ${i.spill_count}</span>` : "",
+      i.estimate_hours != null ? `<span title="Estimate">⏱ ${hrs(i.estimate_hours)}</span>` : "",
     ].join("");
     const where = sp ? `<span class="pill ${locked ? "accent" : ""}" title="${locked ? "In the running sprint. Moving it out is a spill." : "Planned"}">${esc(sp.name)}</span>`
                      : `<span class="pill unplanned">Unplanned</span>`;
@@ -1069,7 +1097,7 @@ function viewPending(){
   };
   const areaOpts = `<option value="">No area</option>` + S.areas.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join("");
   const body = order.length ? order.map(k => { const g = groups.get(k);
-      return `<div class="pgroup"><div class="pg-head ${k === "!" ? "late" : ""}"><h3>${g.label}</h3><span class="sub">${g.sub}</span><span class="sub">· ${g.rows.length}</span></div>
+      return `<div class="pgroup"><div class="pg-head ${k === "!" ? "late" : ""}"><h3>${g.label}</h3><span class="sub">${g.sub}</span><span class="sub">· ${g.rows.length} task${g.rows.length > 1 ? "s" : ""}${g.rows.some(i => i.estimate_hours != null) ? ` · ${hrs(sumH(g.rows, "estimate_hours"))} estimated` : ""}</span></div>
         <ul class="rows" style="padding:0">${sortItems(g.rows).map(row).join("")}</ul></div>`; }).join("")
     : `<div class="empty" style="margin:18px">Nothing pending. Add what's coming up in the next few weeks above.</div>`;
   const bulk = ui.sel.size ? `<div class="bulk"><b>${ui.sel.size} selected</b><select id="bulkTarget"><option value="">Plan into…</option>${planOptions(null)}<option value="backlog">Back to backlog</option></select>
@@ -1083,6 +1111,7 @@ function viewPending(){
       <input class="when-date ${store.get("when", "w1") === "pick" ? "" : "hidden"}" type="date" name="picked" aria-label="Week of" min="${S.today}">
       <select name="area_id" aria-label="Area">${areaOpts}</select>
       <select name="priority" aria-label="Priority"><option value="1">P1</option><option value="2" selected>P2</option><option value="3">P3</option></select>
+      <input name="hours" type="number" min="0" max="500" step="0.25" inputmode="decimal" placeholder="Hours" aria-label="Estimated hours" style="flex:0 0 90px;min-width:0">
       <button class="btn" type="submit">Add</button></form>
     ${filters(items.length, all.length)}
     ${body}
@@ -1263,6 +1292,8 @@ async function openDrawer(id){
   f.priority.value = it ? it.priority : 2;
   f.due_date.value = it?.due_date || "";
   f.target_date.value = it?.target_date || "";
+  f.estimate_hours.value = it?.estimate_hours ?? "";
+  f.spent_hours.value = it?.spent_hours ?? "";
   f.area_id.value = it ? (it.area_id ?? "") : (ui.areas.size === 1 ? [...ui.areas][0] : "");
   f.sprint_id.value = it ? (it.sprint_id ?? "") : (ui.tab === "board" && viewed && !viewed.closed_at ? viewed.id : "");
   setDState(it ? (it.state === "dropped" ? "todo" : it.state) : "todo");
@@ -1308,6 +1339,8 @@ $("#itemForm").addEventListener("submit", async e => {
     area_id: f.area_id.value ? +f.area_id.value : null, sprint_id: f.sprint_id.value ? +f.sprint_id.value : null,
     priority: +f.priority.value, due_date: f.due_date.value || null, state: dState,
     target_date: f.target_date.value ? weekStart(f.target_date.value) : null,
+    estimate_hours: f.estimate_hours.value === "" ? null : +f.estimate_hours.value,
+    spent_hours: f.spent_hours.value === "" ? null : +f.spent_hours.value,
   };
   if (!data.title) return toast("Give it a title", "err");
   if (editing === "new"){
@@ -1326,6 +1359,7 @@ $("#itemForm").addEventListener("submit", async e => {
   }
 });
 $$("#dState button").forEach(b => b.addEventListener("click", () => setDState(b.dataset.state)));
+$$("#hbtns [data-addh]").forEach(b => b.addEventListener("click", () => { const f = $("#itemForm").spent_hours; f.value = Math.round(((+f.value || 0) + +b.dataset.addh) * 4) / 4; }));
 $("#dClose").onclick = closeDrawer;
 $("#scrim").onclick = closeDrawer;
 $("#dSpill").onclick = () => openSpill(editing);
@@ -1418,7 +1452,9 @@ function openClose(){
   const items = S.items.filter(i => i.sprint_id === sp.id && i.state !== "dropped");
   const open = sortItems(items.filter(isOpen)), done = items.length - open.length;
   $("#closeWhat").textContent = sp.name;
-  $("#closeSummary").innerHTML = `<span class="pill ok">${done} done</span><span class="pill ${open.length ? "warn" : ""}">${open.length} unfinished</span><span class="pill">${sp.spills} spills during sprint</span>`;
+  $("#closeSummary").innerHTML = `<span class="pill ok">${done} done</span><span class="pill ${open.length ? "warn" : ""}">${open.length} unfinished</span><span class="pill">${sp.spills} spills during sprint</span>`
+    + (accuracy(items) ? `<span class="pill">⏱ ${accuracy(items).label}</span>` : "")
+    + (items.some(i => i.spent_hours) ? `<span class="pill">${hrs(sumH(items, "spent_hours"))} logged</span>` : "");
   $("#closeLead").textContent = open.length ? "Every unfinished item needs a decision and a reason. Carried-over items count as spills." : "Clean sprint. Nothing to carry over. 🎉";
   const catOpts = Object.entries(CAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
   $("#closeList").innerHTML = open.map(i => `<div class="close-row" data-id="${i.id}">
@@ -1492,7 +1528,7 @@ document.addEventListener("submit", async e => {
     const title = f.title.value.trim(); if (!title) return;
     if (f.when.value === "pick" && !f.picked.value) return toast("Pick a week", "err");
     const target_date = whenToDate(f.when.value, f.picked.value);
-    const r = await act(() => api("POST", "/api/items", {title, target_date, area_id: f.area_id.value ? +f.area_id.value : null, priority: +f.priority.value}),
+    const r = await act(() => api("POST", "/api/items", {title, target_date, area_id: f.area_id.value ? +f.area_id.value : null, priority: +f.priority.value, estimate_hours: f.hours.value === "" ? null : +f.hours.value}),
       target_date ? `Added for week of ${fmt(target_date, {day:"numeric", month:"short"})}` : "Added (someday)");
     if (r) $("#pendingAdd [name=title]")?.focus();
   } else if (f.id === "quickAdd"){
