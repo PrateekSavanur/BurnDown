@@ -1205,6 +1205,7 @@ def record_failure(ip: str):
 
 
 PUBLIC_PATHS = {"/login", "/api/login", "/healthz"}
+PWA_FILES = {"/manifest.webmanifest", "/icon-192.png", "/icon-512.png"}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -1283,7 +1284,8 @@ class Handler(BaseHTTPRequestHandler):
         f = STATIC / "index.html" if path in ("/", "/index.html") else (STATIC / path.lstrip("/")).resolve()
         if not f.is_file() or STATIC not in f.parents:
             return self._send(404, b"not found", "text/plain")
-        ctype = mimetypes.guess_type(f.name)[0] or "application/octet-stream"
+        ctype = ("application/manifest+json" if f.suffix == ".webmanifest"
+                 else mimetypes.guess_type(f.name)[0] or "application/octet-stream")
         if ctype.startswith("text/") or ctype in ("application/javascript", "application/json"):
             ctype += "; charset=utf-8"
         self._send(200, f.read_bytes(), ctype)
@@ -1300,6 +1302,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._login()
         if url.path == "/api/logout" and method == "POST":
             return self._logout()
+        if method == "GET" and url.path in PWA_FILES:
+            return self._static(url.path)
         if not self._authorized():
             if url.path.startswith("/api/"):
                 return self._json(401, {"error": "Signed out", "login": True})
